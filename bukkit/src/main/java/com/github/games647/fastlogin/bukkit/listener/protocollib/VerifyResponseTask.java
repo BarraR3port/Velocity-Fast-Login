@@ -65,11 +65,11 @@ public class VerifyResponseTask implements Runnable {
     private static final Class < ? > ENCRYPTION_CLASS;
     private static Method encryptMethod;
     private static Method cipherMethod;
-
+    
     static{
         ENCRYPTION_CLASS = MinecraftReflection.getMinecraftClass( "util." + ENCRYPTION_CLASS_NAME , ENCRYPTION_CLASS_NAME );
     }
-
+    
     private final FastLoginBukkit plugin;
     private final PacketEvent packetEvent;
     private final KeyPair serverKey;
