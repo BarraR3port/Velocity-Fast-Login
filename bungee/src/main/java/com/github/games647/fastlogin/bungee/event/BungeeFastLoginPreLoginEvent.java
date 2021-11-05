@@ -31,29 +31,29 @@ import com.github.games647.fastlogin.core.shared.event.FastLoginPreLoginEvent;
 import net.md_5.bungee.api.plugin.Event;
 
 public class BungeeFastLoginPreLoginEvent extends Event implements FastLoginPreLoginEvent {
-
+    
     private final String username;
     private final LoginSource source;
     private final StoredProfile profile;
-
-    public BungeeFastLoginPreLoginEvent(String username, LoginSource source, StoredProfile profile) {
+    
+    public BungeeFastLoginPreLoginEvent( String username , LoginSource source , StoredProfile profile ){
         this.username = username;
         this.source = source;
         this.profile = profile;
     }
-
+    
     @Override
-    public String getUsername() {
+    public String getUsername( ){
         return username;
     }
-
+    
     @Override
-    public LoginSource getSource() {
+    public LoginSource getSource( ){
         return source;
     }
-
+    
     @Override
-    public StoredProfile getProfile() {
+    public StoredProfile getProfile( ){
         return profile;
     }
 }

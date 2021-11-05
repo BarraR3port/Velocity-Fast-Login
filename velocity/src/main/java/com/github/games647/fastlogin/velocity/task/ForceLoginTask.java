@@ -44,93 +44,91 @@ import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
 public class ForceLoginTask
-        extends ForceLoginManagement<Player, CommandSource, VelocityLoginSession, FastLoginVelocity> {
-
+        extends ForceLoginManagement < Player, CommandSource, VelocityLoginSession, FastLoginVelocity > {
+    
     private final RegisteredServer server;
-
+    
     //treat player as if they had a premium account, even when they don't
     //used for Floodgate auto login/register
     private final boolean forcedOnlineMode;
-
-    public ForceLoginTask(FastLoginCore<Player, CommandSource, FastLoginVelocity> core,
-                          Player player, RegisteredServer server, VelocityLoginSession session, boolean forcedOnlineMode) {
-        super(core, player, session);
-
+    
+    public ForceLoginTask( FastLoginCore < Player, CommandSource, FastLoginVelocity > core , Player player , RegisteredServer server , VelocityLoginSession session , boolean forcedOnlineMode ){
+        super( core , player , session );
+        
         this.server = server;
         this.forcedOnlineMode = forcedOnlineMode;
     }
-
-    public ForceLoginTask(FastLoginCore<Player, CommandSource, FastLoginVelocity> core, Player player,
-                          RegisteredServer server, VelocityLoginSession session) {
-        this(core, player, server, session, false);
+    
+    public ForceLoginTask( FastLoginCore < Player, CommandSource, FastLoginVelocity > core , Player player , RegisteredServer server , VelocityLoginSession session ){
+        this( core , player , server , session , false );
     }
-
+    
     @Override
-    public void run() {
-        if (session == null) {
+    public void run( ){
+        if ( session == null ) {
             return;
         }
-
-        super.run();
-        if (!isOnlineMode()) {
-            session.setAlreadySaved(true);
+        
+        super.run( );
+        if ( !isOnlineMode( ) ) {
+            session.setAlreadySaved( true );
         }
     }
-
+    
     @Override
-    public boolean forceLogin(Player player) {
-        if (session.isAlreadyLogged()) {
+    public boolean forceLogin( Player player ){
+        if ( session.isAlreadyLogged( ) ) {
             return true;
         }
-
-        session.setAlreadyLogged(true);
-        return super.forceLogin(player);
+        
+        session.setAlreadyLogged( true );
+        return super.forceLogin( player );
     }
-
+    
     @Override
-    public FastLoginAutoLoginEvent callFastLoginAutoLoginEvent(LoginSession session, StoredProfile profile) {
-        VelocityFastLoginAutoLoginEvent event = new VelocityFastLoginAutoLoginEvent(session, profile);
+    public FastLoginAutoLoginEvent callFastLoginAutoLoginEvent( LoginSession session , StoredProfile profile ){
+        VelocityFastLoginAutoLoginEvent event = new VelocityFastLoginAutoLoginEvent( session , profile );
         try {
-             return core.getPlugin().getProxy().getEventManager().fire(event).get();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt(); // Set the interrupt flag again
+            return core.getPlugin( ).getProxy( ).getEventManager( ).fire( event ).get( );
+        } catch ( InterruptedException e ) {
+            Thread.currentThread( ).interrupt( ); // Set the interrupt flag again
             return event;
-        } catch (ExecutionException e) {
-            core.getPlugin().getLog().error("Error firing event", e);
+        } catch ( ExecutionException e ) {
+            core.getPlugin( ).getLog( ).error( "Error firing event" , e );
             return event;
         }
     }
-
+    
     @Override
-    public boolean forceRegister(Player player) {
-        return session.isAlreadyLogged() || super.forceRegister(player);
+    public boolean forceRegister( Player player ){
+        return session.isAlreadyLogged( ) || super.forceRegister( player );
     }
-
+    
     @Override
-    public void onForceActionSuccess(LoginSession session) {
+    public void onForceActionSuccess( LoginSession session ){
         //sub channel name
         Type type = Type.LOGIN;
-        if (session.needsRegistration()) {
+        if ( session.needsRegistration( ) ) {
             type = Type.REGISTER;
         }
-
-        UUID proxyId = core.getPlugin().getProxyId();
-        ChannelMessage loginMessage = new LoginActionMessage(type, player.getUsername(), proxyId);
-        core.getPlugin().sendPluginMessage(server, loginMessage);
+        
+        UUID proxyId = core.getPlugin( ).getProxyId( );
+        ChannelMessage loginMessage = new LoginActionMessage( type , player.getUsername( ) , proxyId );
+        core.getPlugin( ).sendPluginMessage( server , loginMessage );
     }
-
+    
     @Override
-    public String getName(Player player) {
-        return player.getUsername();
+    public String getName( Player player ){
+        return player.getUsername( );
     }
-
+    
     @Override
-    public boolean isOnline(Player player) {
-        return player.isActive();
+    public boolean isOnline( Player player ){
+        return player.isActive( );
     }
-
+    
     @Override
-    public boolean isOnlineMode() {
-        return forcedOnlineMode || player.isOnlineMode();
+    public boolean isOnlineMode( ){
+        return forcedOnlineMode || player.isOnlineMode( );
     }
 }

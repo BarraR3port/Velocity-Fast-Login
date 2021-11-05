@@ -33,29 +33,28 @@ import com.github.games647.fastlogin.bukkit.event.BukkitFastLoginPreLoginEvent;
 import com.github.games647.fastlogin.core.StoredProfile;
 import com.github.games647.fastlogin.core.shared.JoinManagement;
 import com.github.games647.fastlogin.core.shared.event.FastLoginPreLoginEvent;
+import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 
 import java.security.PublicKey;
 import java.util.Random;
 
-import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
-
-public class NameCheckTask extends JoinManagement<Player, CommandSender, ProtocolLibLoginSource>
+public class NameCheckTask extends JoinManagement < Player, CommandSender, ProtocolLibLoginSource >
         implements Runnable {
-
+    
     private final FastLoginBukkit plugin;
     private final PacketEvent packetEvent;
     private final PublicKey publicKey;
-
+    
     private final Random random;
-
+    
     private final Player player;
     private final String username;
-
-    public NameCheckTask(FastLoginBukkit plugin, Random random, Player player, PacketEvent packetEvent,
-                         String username, PublicKey publicKey) {
-        super(plugin.getCore(), plugin.getCore().getAuthPluginHook(), plugin.getFloodgateService());
-
+    
+    public NameCheckTask( FastLoginBukkit plugin , Random random , Player player , PacketEvent packetEvent ,
+                          String username , PublicKey publicKey ){
+        super( plugin.getCore( ) , plugin.getCore( ).getAuthPluginHook( ) , plugin.getFloodgateService( ) );
+        
         this.plugin = plugin;
         this.packetEvent = packetEvent;
         this.publicKey = publicKey;
@@ -63,52 +62,52 @@ public class NameCheckTask extends JoinManagement<Player, CommandSender, Protoco
         this.player = player;
         this.username = username;
     }
-
+    
     @Override
-    public void run() {
+    public void run( ){
         try {
-            super.onLogin(username, new ProtocolLibLoginSource(player, random, publicKey));
+            super.onLogin( username , new ProtocolLibLoginSource( player , random , publicKey ) );
         } finally {
-            ProtocolLibrary.getProtocolManager().getAsynchronousManager().signalPacketTransmission(packetEvent);
+            ProtocolLibrary.getProtocolManager( ).getAsynchronousManager( ).signalPacketTransmission( packetEvent );
         }
     }
-
+    
     @Override
-    public FastLoginPreLoginEvent callFastLoginPreLoginEvent(String username, ProtocolLibLoginSource source,
-                                                             StoredProfile profile) {
-        BukkitFastLoginPreLoginEvent event = new BukkitFastLoginPreLoginEvent(username, source, profile);
-        plugin.getServer().getPluginManager().callEvent(event);
+    public FastLoginPreLoginEvent callFastLoginPreLoginEvent( String username , ProtocolLibLoginSource source ,
+                                                              StoredProfile profile ){
+        BukkitFastLoginPreLoginEvent event = new BukkitFastLoginPreLoginEvent( username , source , profile );
+        plugin.getServer( ).getPluginManager( ).callEvent( event );
         return event;
     }
-
+    
     //Minecraft server implementation
     //https://github.com/bergerkiller/CraftSource/blob/master/net.minecraft.server/LoginListener.java#L161
     @Override
-    public void requestPremiumLogin(ProtocolLibLoginSource source, StoredProfile profile
-            , String username, boolean registered) {
+    public void requestPremiumLogin( ProtocolLibLoginSource source , StoredProfile profile
+            , String username , boolean registered ){
         try {
-            source.enableOnlinemode();
-        } catch (Exception ex) {
-            plugin.getLog().error("Cannot send encryption packet. Falling back to cracked login for: {}", profile, ex);
+            source.enableOnlinemode( );
+        } catch ( Exception ex ) {
+            plugin.getLog( ).error( "Cannot send encryption packet. Falling back to cracked login for: {}" , profile , ex );
             return;
         }
-
-        String ip = player.getAddress().getAddress().getHostAddress();
-        core.getPendingLogin().put(ip + username, new Object());
-
-        byte[] verify = source.getVerifyToken();
-
-        BukkitLoginSession playerSession = new BukkitLoginSession(username, verify, registered, profile);
-        plugin.putSession(player.getAddress(), playerSession);
+        
+        String ip = player.getAddress( ).getAddress( ).getHostAddress( );
+        core.getPendingLogin( ).put( ip + username , new Object( ) );
+        
+        byte[] verify = source.getVerifyToken( );
+        
+        BukkitLoginSession playerSession = new BukkitLoginSession( username , verify , registered , profile );
+        plugin.putSession( player.getAddress( ) , playerSession );
         //cancel only if the player has a paid account otherwise login as normal offline player
-        synchronized (packetEvent.getAsyncMarker().getProcessingLock()) {
-            packetEvent.setCancelled(true);
+        synchronized (packetEvent.getAsyncMarker( ).getProcessingLock( )) {
+            packetEvent.setCancelled( true );
         }
     }
-
+    
     @Override
-    public void startCrackedSession(ProtocolLibLoginSource source, StoredProfile profile, String username) {
-        BukkitLoginSession loginSession = new BukkitLoginSession(username, profile);
-        plugin.putSession(player.getAddress(), loginSession);
+    public void startCrackedSession( ProtocolLibLoginSource source , StoredProfile profile , String username ){
+        BukkitLoginSession loginSession = new BukkitLoginSession( username , profile );
+        plugin.putSession( player.getAddress( ) , loginSession );
     }
 }

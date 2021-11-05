@@ -30,29 +30,29 @@ import com.github.games647.fastlogin.core.shared.LoginSource;
 import com.github.games647.fastlogin.core.shared.event.FastLoginPreLoginEvent;
 
 public class VelocityFastLoginPreLoginEvent implements FastLoginPreLoginEvent {
-
+    
     private final String username;
     private final LoginSource source;
     private final StoredProfile profile;
-
-    public VelocityFastLoginPreLoginEvent(String username, LoginSource source, StoredProfile profile) {
+    
+    public VelocityFastLoginPreLoginEvent( String username , LoginSource source , StoredProfile profile ){
         this.username = username;
         this.source = source;
         this.profile = profile;
     }
-
+    
     @Override
-    public String getUsername() {
+    public String getUsername( ){
         return username;
     }
-
+    
     @Override
-    public LoginSource getSource() {
+    public LoginSource getSource( ){
         return source;
     }
-
+    
     @Override
-    public StoredProfile getProfile() {
+    public StoredProfile getProfile( ){
         return profile;
     }
 }

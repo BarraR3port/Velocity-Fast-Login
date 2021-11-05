@@ -48,6 +48,8 @@ import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -60,146 +62,141 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
-
-import org.slf4j.Logger;
-
 //TODO: Support for floodgate
 @Plugin(id = PomData.NAME, name = PomData.DISPLAY_NAME, description = PomData.DESCRIPTION, url = PomData.URL,
-        version = PomData.VERSION, authors = {"games647", "https://github.com/games647/FastLogin/graphs/contributors"})
-public class FastLoginVelocity implements PlatformPlugin<CommandSource> {
-
+        version = PomData.VERSION, authors = {"games647" , "https://github.com/games647/FastLogin/graphs/contributors"})
+public class FastLoginVelocity implements PlatformPlugin < CommandSource > {
+    
+    private static final String PROXY_ID_fILE = "proxyId.txt";
     private final ProxyServer server;
     private final Path dataDirectory;
     private final Logger logger;
-    private final ConcurrentMap<InetSocketAddress, VelocityLoginSession> session = new MapMaker().weakKeys().makeMap();
-    private static final String PROXY_ID_fILE = "proxyId.txt";
-
-    private FastLoginCore<Player, CommandSource, FastLoginVelocity> core;
+    private final ConcurrentMap < InetSocketAddress, VelocityLoginSession > session = new MapMaker( ).weakKeys( ).makeMap( );
+    private FastLoginCore < Player, CommandSource, FastLoginVelocity > core;
     private AsyncScheduler scheduler;
     private UUID proxyId;
-
+    
     @Inject
-    public FastLoginVelocity(ProxyServer server, Logger logger, @DataDirectory Path dataDirectory) {
+    public FastLoginVelocity( ProxyServer server , Logger logger , @DataDirectory Path dataDirectory ){
         this.server = server;
         this.logger = logger;
         this.dataDirectory = dataDirectory;
     }
-
+    
     @Subscribe
-    public void onProxyInitialization(ProxyInitializeEvent event) {
-        scheduler = new AsyncScheduler(logger, getThreadFactory());
-        core = new FastLoginCore<>(this);
-        core.load();
-        loadOrGenerateProxyId();
-        if (!core.setupDatabase() || proxyId == null) {
+    public void onProxyInitialization( ProxyInitializeEvent event ){
+        scheduler = new AsyncScheduler( logger , getThreadFactory( ) );
+        core = new FastLoginCore <>( this );
+        core.load( );
+        loadOrGenerateProxyId( );
+        if ( !core.setupDatabase( ) || proxyId == null ) {
             return;
         }
-
-        server.getEventManager().register(this, new ConnectListener(this, core.getRateLimiter()));
-        server.getEventManager().register(this, new PluginMessageListener(this));
-        server.getChannelRegistrar().register(MinecraftChannelIdentifier.create(getName(), ChangePremiumMessage.CHANGE_CHANNEL));
-        server.getChannelRegistrar().register(MinecraftChannelIdentifier.create(getName(), SuccessMessage.SUCCESS_CHANNEL));
+        
+        server.getEventManager( ).register( this , new ConnectListener( this , core.getRateLimiter( ) ) );
+        server.getEventManager( ).register( this , new PluginMessageListener( this ) );
+        server.getChannelRegistrar( ).register( MinecraftChannelIdentifier.create( getName( ) , ChangePremiumMessage.CHANGE_CHANNEL ) );
+        server.getChannelRegistrar( ).register( MinecraftChannelIdentifier.create( getName( ) , SuccessMessage.SUCCESS_CHANNEL ) );
     }
-
+    
     @Subscribe
-    public void onProxyShutdown(ProxyShutdownEvent event) {
-        if (core != null) {
-            core.close();
+    public void onProxyShutdown( ProxyShutdownEvent event ){
+        if ( core != null ) {
+            core.close( );
         }
     }
-
+    
     @Override
-    public String getName() {
+    public String getName( ){
         return PomData.NAME;
     }
-
+    
     @Override
-    public Path getPluginFolder() {
+    public Path getPluginFolder( ){
         return dataDirectory;
     }
-
+    
     @Override
-    public Logger getLog() {
+    public Logger getLog( ){
         return logger;
     }
-
+    
     @Override
-    public void sendMessage(CommandSource receiver, String message) {
-        receiver.sendMessage(LegacyComponentSerializer.legacyAmpersand().deserialize(message));
+    public void sendMessage( CommandSource receiver , String message ){
+        receiver.sendMessage( LegacyComponentSerializer.legacyAmpersand( ).deserialize( message ) );
     }
-
+    
     @Override
-    public AsyncScheduler getScheduler() {
+    public AsyncScheduler getScheduler( ){
         return scheduler;
     }
-
+    
     @Override
-    public boolean isPluginInstalled(String name) {
-        return server.getPluginManager().isLoaded(name);
+    public boolean isPluginInstalled( String name ){
+        return server.getPluginManager( ).isLoaded( name );
     }
-
+    
     @Override
-    public FloodgateService getFloodgateService() {
+    public FloodgateService getFloodgateService( ){
         return null;
     }
-
-    public FastLoginCore<Player, CommandSource, FastLoginVelocity> getCore() {
+    
+    public FastLoginCore < Player, CommandSource, FastLoginVelocity > getCore( ){
         return core;
     }
-
-    public ConcurrentMap<InetSocketAddress, VelocityLoginSession> getSession() {
+    
+    public ConcurrentMap < InetSocketAddress, VelocityLoginSession > getSession( ){
         return session;
     }
-
-    public ProxyServer getProxy() {
+    
+    public ProxyServer getProxy( ){
         return server;
     }
-
-    public void sendPluginMessage(RegisteredServer server, ChannelMessage message) {
-        if (server != null) {
-            ByteArrayDataOutput dataOutput = ByteStreams.newDataOutput();
-            message.writeTo(dataOutput);
-
-            MinecraftChannelIdentifier channel = MinecraftChannelIdentifier.create(getName(), message.getChannelName());
-            server.sendPluginMessage(channel, dataOutput.toByteArray());
+    
+    public void sendPluginMessage( RegisteredServer server , ChannelMessage message ){
+        if ( server != null ) {
+            ByteArrayDataOutput dataOutput = ByteStreams.newDataOutput( );
+            message.writeTo( dataOutput );
+            
+            MinecraftChannelIdentifier channel = MinecraftChannelIdentifier.create( getName( ) , message.getChannelName( ) );
+            server.sendPluginMessage( channel , dataOutput.toByteArray( ) );
         }
     }
-
-    private void loadOrGenerateProxyId() {
-        Path idFile = dataDirectory.resolve(PROXY_ID_fILE);
+    
+    private void loadOrGenerateProxyId( ){
+        Path idFile = dataDirectory.resolve( PROXY_ID_fILE );
         boolean shouldGenerate = false;
-
-        if (Files.exists(idFile)) {
+        
+        if ( Files.exists( idFile ) ) {
             try {
-                List<String> lines = Files.readAllLines(idFile, StandardCharsets.UTF_8);
-                if (lines.isEmpty()) {
+                List < String > lines = Files.readAllLines( idFile , StandardCharsets.UTF_8 );
+                if ( lines.isEmpty( ) ) {
                     shouldGenerate = true;
                 } else {
-                    proxyId = UUID.fromString(lines.get(0));
+                    proxyId = UUID.fromString( lines.get( 0 ) );
                 }
-            } catch (IOException e) {
-                logger.error("Unable to load proxy id from '{}'", idFile.toAbsolutePath());
-                logger.error("Detailed exception:", e);
-            } catch (IllegalArgumentException e) {
-                logger.error("'{}' contains an invalid uuid! FastLogin will not work without a valid id.", idFile.toAbsolutePath());
+            } catch ( IOException e ) {
+                logger.error( "Unable to load proxy id from '{}'" , idFile.toAbsolutePath( ) );
+                logger.error( "Detailed exception:" , e );
+            } catch ( IllegalArgumentException e ) {
+                logger.error( "'{}' contains an invalid uuid! FastLogin will not work without a valid id." , idFile.toAbsolutePath( ) );
             }
         } else {
             shouldGenerate = true;
         }
-
-        if (shouldGenerate) {
-            proxyId = UUID.randomUUID();
+        
+        if ( shouldGenerate ) {
+            proxyId = UUID.randomUUID( );
             try {
-                Files.write(idFile, Collections.singletonList(proxyId.toString()), StandardOpenOption.CREATE);
-            } catch (IOException e) {
-                logger.error("Unable to save proxy id to '{}'", idFile.toAbsolutePath());
-                logger.error("Detailed exception:", e);
+                Files.write( idFile , Collections.singletonList( proxyId.toString( ) ) , StandardOpenOption.CREATE );
+            } catch ( IOException e ) {
+                logger.error( "Unable to save proxy id to '{}'" , idFile.toAbsolutePath( ) );
+                logger.error( "Detailed exception:" , e );
             }
         }
     }
-
-    public UUID getProxyId() {
+    
+    public UUID getProxyId( ){
         return proxyId;
     }
 }

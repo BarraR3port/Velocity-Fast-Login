@@ -29,26 +29,26 @@ import com.google.common.io.ByteArrayDataInput;
 import com.google.common.io.ByteArrayDataOutput;
 
 public class SuccessMessage implements ChannelMessage {
-
+    
     public static final String SUCCESS_CHANNEL = "succ";
-
+    
     @Override
-    public String getChannelName() {
+    public String getChannelName( ){
         return SUCCESS_CHANNEL;
     }
-
+    
     @Override
-    public void readFrom(ByteArrayDataInput input) {
+    public void readFrom( ByteArrayDataInput input ){
         //empty
     }
-
+    
     @Override
-    public void writeTo(ByteArrayDataOutput output) {
+    public void writeTo( ByteArrayDataOutput output ){
         //empty
     }
-
+    
     @Override
-    public String toString() {
-        return this.getClass().getSimpleName() + "{}";
+    public String toString( ){
+        return this.getClass( ).getSimpleName( ) + "{}";
     }
 }

@@ -26,41 +26,40 @@
 package com.github.games647.fastlogin.bukkit.listener.protocolsupport;
 
 import com.github.games647.fastlogin.core.shared.LoginSource;
+import protocolsupport.api.events.PlayerLoginStartEvent;
 
 import java.net.InetSocketAddress;
 
-import protocolsupport.api.events.PlayerLoginStartEvent;
-
 public class ProtocolLoginSource implements LoginSource {
-
+    
     private final PlayerLoginStartEvent loginStartEvent;
-
-    public ProtocolLoginSource(PlayerLoginStartEvent loginStartEvent) {
+    
+    public ProtocolLoginSource( PlayerLoginStartEvent loginStartEvent ){
         this.loginStartEvent = loginStartEvent;
     }
-
+    
     @Override
-    public void enableOnlinemode() {
-        loginStartEvent.setOnlineMode(true);
+    public void enableOnlinemode( ){
+        loginStartEvent.setOnlineMode( true );
     }
-
+    
     @Override
-    public void kick(String message) {
-        loginStartEvent.denyLogin(message);
+    public void kick( String message ){
+        loginStartEvent.denyLogin( message );
     }
-
+    
     @Override
-    public InetSocketAddress getAddress() {
-        return loginStartEvent.getAddress();
+    public InetSocketAddress getAddress( ){
+        return loginStartEvent.getAddress( );
     }
-
-    public PlayerLoginStartEvent getLoginStartEvent() {
+    
+    public PlayerLoginStartEvent getLoginStartEvent( ){
         return loginStartEvent;
     }
-
+    
     @Override
-    public String toString() {
-        return this.getClass().getSimpleName() + '{' +
+    public String toString( ){
+        return this.getClass( ).getSimpleName( ) + '{' +
                 "loginStartEvent=" + loginStartEvent +
                 '}';
     }

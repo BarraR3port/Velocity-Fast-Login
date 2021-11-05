@@ -29,22 +29,22 @@ import com.github.games647.fastlogin.core.StoredProfile;
 import com.github.games647.fastlogin.core.shared.event.FastLoginPremiumToggleEvent;
 
 public class VelocityFastLoginPremiumToggleEvent implements FastLoginPremiumToggleEvent {
-
+    
     private final StoredProfile profile;
     private final PremiumToggleReason reason;
-
-    public VelocityFastLoginPremiumToggleEvent(StoredProfile profile, PremiumToggleReason reason) {
+    
+    public VelocityFastLoginPremiumToggleEvent( StoredProfile profile , PremiumToggleReason reason ){
         this.profile = profile;
         this.reason = reason;
     }
-
+    
     @Override
-    public StoredProfile getProfile() {
+    public StoredProfile getProfile( ){
         return profile;
     }
-
+    
     @Override
-    public PremiumToggleReason getReason() {
+    public PremiumToggleReason getReason( ){
         return reason;
     }
 }

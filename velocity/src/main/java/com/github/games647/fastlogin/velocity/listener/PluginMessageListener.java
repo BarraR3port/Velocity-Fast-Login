@@ -45,84 +45,84 @@ import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import java.util.Arrays;
 
 public class PluginMessageListener {
-
+    
     private final FastLoginVelocity plugin;
-
+    
     private final String successChannel;
     private final String changeChannel;
-
-    public PluginMessageListener(FastLoginVelocity plugin) {
+    
+    public PluginMessageListener( FastLoginVelocity plugin ){
         this.plugin = plugin;
-
-        this.successChannel = MinecraftChannelIdentifier.create(plugin.getName(), SuccessMessage.SUCCESS_CHANNEL).getId();
-        this.changeChannel = MinecraftChannelIdentifier.create(plugin.getName(), ChangePremiumMessage.CHANGE_CHANNEL).getId();
+        
+        this.successChannel = MinecraftChannelIdentifier.create( plugin.getName( ) , SuccessMessage.SUCCESS_CHANNEL ).getId( );
+        this.changeChannel = MinecraftChannelIdentifier.create( plugin.getName( ) , ChangePremiumMessage.CHANGE_CHANNEL ).getId( );
     }
-
+    
     @Subscribe
-    public void onPluginMessage(PluginMessageEvent pluginMessageEvent) {
-        String channel = pluginMessageEvent.getIdentifier().getId();
-        if (!pluginMessageEvent.getResult().isAllowed() || !channel.startsWith(plugin.getName().toLowerCase())) {
+    public void onPluginMessage( PluginMessageEvent pluginMessageEvent ){
+        String channel = pluginMessageEvent.getIdentifier( ).getId( );
+        if ( !pluginMessageEvent.getResult( ).isAllowed( ) || !channel.startsWith( plugin.getName( ).toLowerCase( ) ) ) {
             return;
         }
-
+        
         //the client shouldn't be able to read the messages in order to know something about server internal states
         //moreover the client shouldn't be able fake a running premium check by sending the result message
-        pluginMessageEvent.setResult(PluginMessageEvent.ForwardResult.handled());
-
-        if (!(pluginMessageEvent.getSource() instanceof ServerConnection)) {
+        pluginMessageEvent.setResult( PluginMessageEvent.ForwardResult.handled( ) );
+        
+        if ( !(pluginMessageEvent.getSource( ) instanceof ServerConnection) ) {
             //check if the message is sent from the server
             return;
         }
-
+        
         //so that we can safely process this in the background
-        byte[] data = Arrays.copyOf(pluginMessageEvent.getData(), pluginMessageEvent.getData().length);
-        Player forPlayer = (Player) pluginMessageEvent.getTarget();
-
-        plugin.getScheduler().runAsync(() -> readMessage(forPlayer, channel, data));
+        byte[] data = Arrays.copyOf( pluginMessageEvent.getData( ) , pluginMessageEvent.getData( ).length );
+        Player forPlayer = ( Player ) pluginMessageEvent.getTarget( );
+        
+        plugin.getScheduler( ).runAsync( ( ) -> readMessage( forPlayer , channel , data ) );
     }
-
-    private void readMessage(Player forPlayer, String channel, byte[] data) {
-        FastLoginCore<Player, CommandSource, FastLoginVelocity> core = plugin.getCore();
-
-        ByteArrayDataInput dataInput = ByteStreams.newDataInput(data);
-        if (successChannel.equals(channel)) {
-            onSuccessMessage(forPlayer);
-        } else if (changeChannel.equals(channel)) {
-            ChangePremiumMessage changeMessage = new ChangePremiumMessage();
-            changeMessage.readFrom(dataInput);
-
-            String playerName = changeMessage.getPlayerName();
-            boolean isSourceInvoker = changeMessage.isSourceInvoker();
-            if (changeMessage.shouldEnable()) {
-                if (playerName.equals(forPlayer.getUsername()) && plugin.getCore().getConfig().get("premium-warning", true)
-                        && !core.getPendingConfirms().contains(forPlayer.getUniqueId())) {
-                    String message = core.getMessage("premium-warning");
-                    forPlayer.sendMessage(LegacyComponentSerializer.legacyAmpersand().deserialize(message));
-                    core.getPendingConfirms().add(forPlayer.getUniqueId());
+    
+    private void readMessage( Player forPlayer , String channel , byte[] data ){
+        FastLoginCore < Player, CommandSource, FastLoginVelocity > core = plugin.getCore( );
+        
+        ByteArrayDataInput dataInput = ByteStreams.newDataInput( data );
+        if ( successChannel.equals( channel ) ) {
+            onSuccessMessage( forPlayer );
+        } else if ( changeChannel.equals( channel ) ) {
+            ChangePremiumMessage changeMessage = new ChangePremiumMessage( );
+            changeMessage.readFrom( dataInput );
+            
+            String playerName = changeMessage.getPlayerName( );
+            boolean isSourceInvoker = changeMessage.isSourceInvoker( );
+            if ( changeMessage.shouldEnable( ) ) {
+                if ( playerName.equals( forPlayer.getUsername( ) ) && plugin.getCore( ).getConfig( ).get( "premium-warning" , true )
+                        && !core.getPendingConfirms( ).contains( forPlayer.getUniqueId( ) ) ) {
+                    String message = core.getMessage( "premium-warning" );
+                    forPlayer.sendMessage( LegacyComponentSerializer.legacyAmpersand( ).deserialize( message ) );
+                    core.getPendingConfirms( ).add( forPlayer.getUniqueId( ) );
                     return;
                 }
-
-                core.getPendingConfirms().remove(forPlayer.getUniqueId());
-                Runnable task = new AsyncToggleMessage(core, forPlayer, playerName, true, isSourceInvoker);
-                plugin.getScheduler().runAsync(task);
+                
+                core.getPendingConfirms( ).remove( forPlayer.getUniqueId( ) );
+                Runnable task = new AsyncToggleMessage( core , forPlayer , playerName , true , isSourceInvoker );
+                plugin.getScheduler( ).runAsync( task );
             } else {
-                Runnable task = new AsyncToggleMessage(core, forPlayer, playerName, false, isSourceInvoker);
-                plugin.getScheduler().runAsync(task);
+                Runnable task = new AsyncToggleMessage( core , forPlayer , playerName , false , isSourceInvoker );
+                plugin.getScheduler( ).runAsync( task );
             }
         }
     }
-
-    private void onSuccessMessage(Player forPlayer) {
-        if (forPlayer.isOnlineMode()){
+    
+    private void onSuccessMessage( Player forPlayer ){
+        if ( forPlayer.isOnlineMode( ) ) {
             //bukkit module successfully received and force logged in the user
             //update only on success to prevent corrupt data
-            VelocityLoginSession loginSession = plugin.getSession().get(forPlayer.getRemoteAddress());
-            StoredProfile playerProfile = loginSession.getProfile();
-            loginSession.setRegistered(true);
-            if (!loginSession.isAlreadySaved()) {
-                playerProfile.setPremium(true);
-                plugin.getCore().getStorage().save(playerProfile);
-                loginSession.setAlreadySaved(true);
+            VelocityLoginSession loginSession = plugin.getSession( ).get( forPlayer.getRemoteAddress( ) );
+            StoredProfile playerProfile = loginSession.getProfile( );
+            loginSession.setRegistered( true );
+            if ( !loginSession.isAlreadySaved( ) ) {
+                playerProfile.setPremium( true );
+                plugin.getCore( ).getStorage( ).save( playerProfile );
+                loginSession.setAlreadySaved( true );
             }
         }
     }

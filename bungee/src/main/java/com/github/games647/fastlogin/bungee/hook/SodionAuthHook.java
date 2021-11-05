@@ -41,38 +41,38 @@ import red.mohist.sodionauth.core.exception.AuthenticatedException;
  * <p>
  * Spigot: https://www.spigotmc.org/resources/sodionauth.76944/
  */
-public class SodionAuthHook implements AuthPlugin<ProxiedPlayer> {
-
+public class SodionAuthHook implements AuthPlugin < ProxiedPlayer > {
+    
     private final FastLoginBungee plugin;
-
-    public SodionAuthHook(FastLoginBungee plugin) {
+    
+    public SodionAuthHook( FastLoginBungee plugin ){
         this.plugin = plugin;
     }
-
+    
     @Override
-    public boolean forceLogin(ProxiedPlayer player) {
+    public boolean forceLogin( ProxiedPlayer player ){
         try {
-            SodionAuthApi.login(new BungeePlayer(player));
-        } catch (AuthenticatedException e) {
-            plugin.getLog().warn(ALREADY_AUTHENTICATED, player);
+            SodionAuthApi.login( new BungeePlayer( player ) );
+        } catch ( AuthenticatedException e ) {
+            plugin.getLog( ).warn( ALREADY_AUTHENTICATED , player );
             return false;
         }
         return true;
     }
-
+    
     @Override
-    public boolean forceRegister(ProxiedPlayer player, String password) {
-        try{
-            return SodionAuthApi.register(new BungeePlayer(player), password);
-        } catch (UnsupportedOperationException e){
-            plugin.getLog().warn("Currently SodionAuth is not accepting forceRegister, " +
-                    "It may be caused by unsupported AuthBackend");
+    public boolean forceRegister( ProxiedPlayer player , String password ){
+        try {
+            return SodionAuthApi.register( new BungeePlayer( player ) , password );
+        } catch ( UnsupportedOperationException e ) {
+            plugin.getLog( ).warn( "Currently SodionAuth is not accepting forceRegister, " +
+                    "It may be caused by unsupported AuthBackend" );
             return false;
         }
     }
-
+    
     @Override
-    public boolean isRegistered(String playerName) {
-        return SodionAuthApi.isRegistered(playerName);
+    public boolean isRegistered( String playerName ){
+        return SodionAuthApi.isRegistered( playerName );
     }
 }

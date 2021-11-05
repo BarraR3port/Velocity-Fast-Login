@@ -28,10 +28,10 @@ package com.github.games647.fastlogin.core.shared;
 import java.net.InetSocketAddress;
 
 public interface LoginSource {
-
-    void enableOnlinemode() throws Exception;
-
-    void kick(String message) throws Exception;
-
-    InetSocketAddress getAddress();
+    
+    void enableOnlinemode( ) throws Exception;
+    
+    void kick( String message ) throws Exception;
+    
+    InetSocketAddress getAddress( );
 }

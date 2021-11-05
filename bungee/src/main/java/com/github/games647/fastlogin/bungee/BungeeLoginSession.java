@@ -29,40 +29,40 @@ import com.github.games647.fastlogin.core.StoredProfile;
 import com.github.games647.fastlogin.core.shared.LoginSession;
 
 public class BungeeLoginSession extends LoginSession {
-
+    
     private boolean alreadySaved;
     private boolean alreadyLogged;
-
-    public BungeeLoginSession(String username, boolean registered, StoredProfile profile) {
-        super(username, registered, profile);
+    
+    public BungeeLoginSession( String username , boolean registered , StoredProfile profile ){
+        super( username , registered , profile );
     }
-
-    public synchronized void setRegistered(boolean registered) {
+    
+    public synchronized void setRegistered( boolean registered ){
         this.registered = registered;
     }
-
-    public synchronized boolean isAlreadySaved() {
+    
+    public synchronized boolean isAlreadySaved( ){
         return alreadySaved;
     }
-
-    public synchronized void setAlreadySaved(boolean alreadySaved) {
+    
+    public synchronized void setAlreadySaved( boolean alreadySaved ){
         this.alreadySaved = alreadySaved;
     }
-
-    public synchronized boolean isAlreadyLogged() {
+    
+    public synchronized boolean isAlreadyLogged( ){
         return alreadyLogged;
     }
-
-    public synchronized void setAlreadyLogged(boolean alreadyLogged) {
+    
+    public synchronized void setAlreadyLogged( boolean alreadyLogged ){
         this.alreadyLogged = alreadyLogged;
     }
-
+    
     @Override
-    public synchronized String toString() {
-        return this.getClass().getSimpleName() + '{' +
+    public synchronized String toString( ){
+        return this.getClass( ).getSimpleName( ) + '{' +
                 "alreadySaved=" + alreadySaved +
                 ", alreadyLogged=" + alreadyLogged +
                 ", registered=" + registered +
-                "} " + super.toString();
+                "} " + super.toString( );
     }
 }

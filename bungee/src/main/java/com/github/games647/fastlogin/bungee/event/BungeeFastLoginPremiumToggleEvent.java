@@ -30,22 +30,22 @@ import com.github.games647.fastlogin.core.shared.event.FastLoginPremiumToggleEve
 import net.md_5.bungee.api.plugin.Event;
 
 public class BungeeFastLoginPremiumToggleEvent extends Event implements FastLoginPremiumToggleEvent {
-
+    
     private final StoredProfile profile;
     private final PremiumToggleReason reason;
-
-    public BungeeFastLoginPremiumToggleEvent(StoredProfile profile, PremiumToggleReason reason) {
+    
+    public BungeeFastLoginPremiumToggleEvent( StoredProfile profile , PremiumToggleReason reason ){
         this.profile = profile;
         this.reason = reason;
     }
-
+    
     @Override
-    public StoredProfile getProfile() {
+    public StoredProfile getProfile( ){
         return profile;
     }
-
+    
     @Override
-    public FastLoginPremiumToggleEvent.PremiumToggleReason getReason() {
+    public FastLoginPremiumToggleEvent.PremiumToggleReason getReason( ){
         return reason;
     }
 }

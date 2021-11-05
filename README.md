@@ -23,14 +23,14 @@ So they don't need to enter passwords. This is also called auto login (auto-logi
 
 ## Issues
 
-Please use issues for bug reports, suggestions, questions and more. Please check for existing issues. Existing issues 
+Please use issues for bug reports, suggestions, questions and more. Please check for existing issues. Existing issues
 can be voted up by adding up vote to the original post. Closing issues means that they are marked as resolved. Comments
 are still allowed and it could be re-opened.
 
 ## Development builds
 
 Development builds contain the latest changes from the Source-Code. They are bleeding edge and could introduce new bugs,
-but also include features, enhancements and bug fixes that are not yet in a released version. If you click on the left 
+but also include features, enhancements and bug fixes that are not yet in a released version. If you click on the left
 side on `Changes`, you can see iterative change sets leading to a specific build.
 
 You can download them from here: https://ci.codemc.org/job/Games647/job/FastLogin/
@@ -51,17 +51,17 @@ You can download them from here: https://ci.codemc.org/job/Games647/job/FastLogi
 
 ## Placeholder
 
-This plugin supports `PlaceholderAPI` on `Spigot`. It exports the following variable 
-`%fastlogin_status%`. In BungeeCord environments, the status of a player will be delivered with a delay after the player 
-already successful joined the server. This takes about a couple of milliseconds. In this case the value
-will be `Unknown`. 
+This plugin supports `PlaceholderAPI` on `Spigot`. It exports the following variable
+`%fastlogin_status%`. In BungeeCord environments, the status of a player will be delivered with a delay after the player
+already successful joined the server. This takes about a couple of milliseconds. In this case the value will
+be `Unknown`.
 
-Possible values: `Premium`, `Cracked`, `Unknown` 
+Possible values: `Premium`, `Cracked`, `Unknown`
 
 ## Requirements
 
-* Plugin: 
-    * [ProtocolLib](https://www.spigotmc.org/resources/protocollib.1997/) or 
+* Plugin:
+    * [ProtocolLib](https://www.spigotmc.org/resources/protocollib.1997/) or
     * [ProtocolSupport](https://www.spigotmc.org/resources/protocolsupport.7201/)
 * [Spigot](https://www.spigotmc.org) 1.8.8+
 * Java 8+
@@ -109,13 +109,15 @@ This plugin performs network requests to:
 
 1. Activate BungeeCord in the Spigot configuration
 2. Restart your server
-3. Now there is `allowed-proxies.txt` file in the FastLogin folder
-Put your stats id from the BungeeCord config into this file
+3. Now there is `allowed-proxies.txt` file in the FastLogin folder Put your stats id from the BungeeCord config into
+   this file
 4. Activate ipForward in your BungeeCord config
 5. Download and Install FastLogin (or FastLoginBungee/FastLoginBukkit in newer versions) on BungeeCord AND Spigot
-(on the servers where your login plugin is or where player should be able to execute the commands of FastLogin)
+   (on the servers where your login plugin is or where player should be able to execute the commands of FastLogin)
 6. Check your database settings in the config of FastLogin on BungeeCord
 7. Set proxy and Spigot in offline mode by setting the value onlinemode in your config.yml to false
-8. You should *always* firewall your Spigot server that it's only accessible through BungeeCord 
+8. You should *always* firewall your Spigot server that it's only accessible through BungeeCord
     * https://www.spigotmc.org/wiki/bungeecord-installation/#post-installation
-    * BungeeCord doesn't support SQLite per default, so you should change the configuration to MySQL or MariaDB. For that you have to install MariaDB/MySQL on your root server first and put the credentials you made in the FastLogin config files.
+    * BungeeCord doesn't support SQLite per default, so you should change the configuration to MySQL or MariaDB. For
+      that you have to install MariaDB/MySQL on your root server first and put the credentials you made in the FastLogin
+      config files.

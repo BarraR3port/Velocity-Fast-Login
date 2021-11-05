@@ -165,7 +165,7 @@ premium-warning: true
 # Lists are created like this:
 #ip-addresses:
 #    - 192-168-0-2
-ip-addresses: []
+ip-addresses: [ ]
 
 # How many requests should be established to the Mojang API for Name -> UUID requests. Some other plugins as well
 # as the head Minecraft block make such requests as well. Using this option you can limit the amount requests this
@@ -283,6 +283,6 @@ database: '{pluginDir}/FastLogin.db'
 # the rate-limit or the custom value above.
 # Please make sure you use reliable proxies.
 proxies:
-  # 'IP:Port' or 'Domain:Port'
-  # - 'xyz.com:1337'
-  # - 'test.com:5131'
+# 'IP:Port' or 'Domain:Port'
+# - 'xyz.com:1337'
+# - 'test.com:5131'

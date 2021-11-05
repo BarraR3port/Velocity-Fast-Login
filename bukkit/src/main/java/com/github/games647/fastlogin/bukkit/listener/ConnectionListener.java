@@ -30,7 +30,6 @@ import com.github.games647.fastlogin.bukkit.FastLoginBukkit;
 import com.github.games647.fastlogin.bukkit.task.FloodgateAuthTask;
 import com.github.games647.fastlogin.bukkit.task.ForceLoginTask;
 import com.github.games647.fastlogin.core.hooks.FloodgateService;
-
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -47,71 +46,71 @@ import org.geysermc.floodgate.api.player.FloodgatePlayer;
  * plugin can skip authentication.
  */
 public class ConnectionListener implements Listener {
-
+    
     private static final long DELAY_LOGIN = 20L / 2;
-
+    
     private final FastLoginBukkit plugin;
-
-    public ConnectionListener(FastLoginBukkit plugin) {
+    
+    public ConnectionListener( FastLoginBukkit plugin ){
         this.plugin = plugin;
     }
-
+    
     @EventHandler(priority = EventPriority.LOWEST)
-    public void onPlayerLogin(PlayerLoginEvent loginEvent) {
-        removeBlockedStatus(loginEvent.getPlayer());
-        if (loginEvent.getResult() == Result.ALLOWED && !plugin.isServerFullyStarted()) {
-            loginEvent.disallow(Result.KICK_OTHER, plugin.getCore().getMessage("not-started"));
+    public void onPlayerLogin( PlayerLoginEvent loginEvent ){
+        removeBlockedStatus( loginEvent.getPlayer( ) );
+        if ( loginEvent.getResult( ) == Result.ALLOWED && !plugin.isServerFullyStarted( ) ) {
+            loginEvent.disallow( Result.KICK_OTHER , plugin.getCore( ).getMessage( "not-started" ) );
         }
     }
-
+    
     @EventHandler(ignoreCancelled = true)
-    public void onPlayerJoin(PlayerJoinEvent joinEvent) {
-        Player player = joinEvent.getPlayer();
-
-        Bukkit.getScheduler().runTaskLater(plugin, () -> {
-            delayForceLogin(player);
+    public void onPlayerJoin( PlayerJoinEvent joinEvent ){
+        Player player = joinEvent.getPlayer( );
+        
+        Bukkit.getScheduler( ).runTaskLater( plugin , ( ) -> {
+            delayForceLogin( player );
             // delay the login process to let auth plugins initialize the player
             // Magic number however as there is no direct event from those plugins
-        }, DELAY_LOGIN);
+        } , DELAY_LOGIN );
     }
-
-    private void delayForceLogin(Player player) {
+    
+    private void delayForceLogin( Player player ){
         // session exists so the player is ready for force login
         // cases: Paper (firing BungeeCord message before PlayerJoinEvent) or not running BungeeCord and already
         // having the login session from the login process
-        BukkitLoginSession session = plugin.getSession(player.getAddress());
-        FloodgateService floodgateService = plugin.getFloodgateService();
-        if (floodgateService != null) {
-            FloodgatePlayer floodgatePlayer = floodgateService.getFloodgatePlayer(player.getUniqueId());
-            if (floodgatePlayer != null) {
-                Runnable floodgateAuthTask = new FloodgateAuthTask(plugin.getCore(), player, floodgatePlayer);
-                Bukkit.getScheduler().runTaskAsynchronously(plugin, floodgateAuthTask);
+        BukkitLoginSession session = plugin.getSession( player.getAddress( ) );
+        FloodgateService floodgateService = plugin.getFloodgateService( );
+        if ( floodgateService != null ) {
+            FloodgatePlayer floodgatePlayer = floodgateService.getFloodgatePlayer( player.getUniqueId( ) );
+            if ( floodgatePlayer != null ) {
+                Runnable floodgateAuthTask = new FloodgateAuthTask( plugin.getCore( ) , player , floodgatePlayer );
+                Bukkit.getScheduler( ).runTaskAsynchronously( plugin , floodgateAuthTask );
                 return;
             }
         }
-
-        if (session == null) {
-            String sessionId = plugin.getSessionId(player.getAddress());
-            plugin.getLog().info("No on-going login session for player: {} with ID {}", player, sessionId);
+        
+        if ( session == null ) {
+            String sessionId = plugin.getSessionId( player.getAddress( ) );
+            plugin.getLog( ).info( "No on-going login session for player: {} with ID {}" , player , sessionId );
         } else {
-            Runnable forceLoginTask = new ForceLoginTask(plugin.getCore(), player, session);
-            Bukkit.getScheduler().runTaskAsynchronously(plugin, forceLoginTask);
+            Runnable forceLoginTask = new ForceLoginTask( plugin.getCore( ) , player , session );
+            Bukkit.getScheduler( ).runTaskAsynchronously( plugin , forceLoginTask );
         }
-
-        plugin.getBungeeManager().markJoinEventFired(player);
+        
+        plugin.getBungeeManager( ).markJoinEventFired( player );
     }
-
+    
     @EventHandler
-    public void onPlayerQuit(PlayerQuitEvent quitEvent) {
-        Player player = quitEvent.getPlayer();
-
-        removeBlockedStatus(player);
-        plugin.getCore().getPendingConfirms().remove(player.getUniqueId());
-        plugin.getPremiumPlayers().remove(player.getUniqueId());
-        plugin.getBungeeManager().cleanup(player);
+    public void onPlayerQuit( PlayerQuitEvent quitEvent ){
+        Player player = quitEvent.getPlayer( );
+        
+        removeBlockedStatus( player );
+        plugin.getCore( ).getPendingConfirms( ).remove( player.getUniqueId( ) );
+        plugin.getPremiumPlayers( ).remove( player.getUniqueId( ) );
+        plugin.getBungeeManager( ).cleanup( player );
     }
-
-    private void removeBlockedStatus(Player player) {
-        player.removeMetadata(plugin.getName(), plugin);
+    
+    private void removeBlockedStatus( Player player ){
+        player.removeMetadata( plugin.getName( ) , plugin );
     }
 }

@@ -37,6 +37,10 @@ import com.github.games647.fastlogin.core.storage.SQLStorage;
 import com.github.games647.fastlogin.core.storage.SQLiteStorage;
 import com.google.common.net.HostAndPort;
 import com.zaxxer.hikari.HikariConfig;
+import net.md_5.bungee.config.Configuration;
+import net.md_5.bungee.config.ConfigurationProvider;
+import net.md_5.bungee.config.YamlConfiguration;
+import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -48,20 +52,9 @@ import java.net.Proxy.Type;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-
-import net.md_5.bungee.config.Configuration;
-import net.md_5.bungee.config.ConfigurationProvider;
-import net.md_5.bungee.config.YamlConfiguration;
-
-import org.slf4j.Logger;
 
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
@@ -72,233 +65,233 @@ import static java.util.stream.Collectors.toSet;
  * @param <C> CommandSender
  * @param <T> Plugin class
  */
-public class FastLoginCore<P extends C, C, T extends PlatformPlugin<C>> {
-
+public class FastLoginCore< P extends C, C, T extends PlatformPlugin < C > > {
+    
     private static final long MAX_EXPIRE_RATE = 1_000_000;
-
-    private final Map<String, String> localeMessages = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, Object> pendingLogin = CommonUtil.buildCache(5, -1);
-    private final Collection<UUID> pendingConfirms = new HashSet<>();
+    
+    private final Map < String, String > localeMessages = new ConcurrentHashMap <>( );
+    private final ConcurrentMap < String, Object > pendingLogin = CommonUtil.buildCache( 5 , -1 );
+    private final Collection < UUID > pendingConfirms = new HashSet <>( );
     private final T plugin;
-
-    private final MojangResolver resolver = new MojangResolver();
-
+    
+    private final MojangResolver resolver = new MojangResolver( );
+    
     private Configuration config;
     private SQLStorage storage;
     private RateLimiter rateLimiter;
-    private PasswordGenerator<P> passwordGenerator = new DefaultPasswordGenerator<>();
-    private AuthPlugin<P> authPlugin;
-
-    public FastLoginCore(T plugin) {
+    private PasswordGenerator < P > passwordGenerator = new DefaultPasswordGenerator <>( );
+    private AuthPlugin < P > authPlugin;
+    
+    public FastLoginCore( T plugin ){
         this.plugin = plugin;
     }
-
-    public void load() {
-        saveDefaultFile("messages.yml");
-        saveDefaultFile("config.yml");
-
+    
+    public void load( ){
+        saveDefaultFile( "messages.yml" );
+        saveDefaultFile( "config.yml" );
+        
         try {
-            config = loadFile("config.yml");
-            Configuration messages = loadFile("messages.yml");
-
-            messages.getKeys()
-                    .stream()
-                    .filter(key -> messages.get(key) != null)
-                    .collect(toMap(identity(), messages::get))
-                    .forEach((key, message) -> {
-                        String colored = CommonUtil.translateColorCodes((String) message);
-                        if (!colored.isEmpty()) {
-                            localeMessages.put(key, colored.replace("/newline", "\n"));
+            config = loadFile( "config.yml" );
+            Configuration messages = loadFile( "messages.yml" );
+            
+            messages.getKeys( )
+                    .stream( )
+                    .filter( key -> messages.get( key ) != null )
+                    .collect( toMap( identity( ) , messages::get ) )
+                    .forEach( ( key , message ) -> {
+                        String colored = CommonUtil.translateColorCodes( ( String ) message );
+                        if ( !colored.isEmpty( ) ) {
+                            localeMessages.put( key , colored.replace( "/newline" , "\n" ) );
                         }
-                    });
-        } catch (IOException ioEx) {
-            plugin.getLog().error("Failed to load yaml files", ioEx);
+                    } );
+        } catch ( IOException ioEx ) {
+            plugin.getLog( ).error( "Failed to load yaml files" , ioEx );
             return;
         }
-
-        int maxCon = config.getInt("anti-bot.connections", 200);
-        long expireTime = config.getLong("anti-bot.expire", 5) * 60 * 1_000L;
-        if (expireTime > MAX_EXPIRE_RATE) {
+        
+        int maxCon = config.getInt( "anti-bot.connections" , 200 );
+        long expireTime = config.getLong( "anti-bot.expire" , 5 ) * 60 * 1_000L;
+        if ( expireTime > MAX_EXPIRE_RATE ) {
             expireTime = MAX_EXPIRE_RATE;
         }
-
-        rateLimiter = new RateLimiter(maxCon, expireTime);
-        Set<Proxy> proxies = config.getStringList("proxies")
-                .stream()
-                .map(HostAndPort::fromString)
-                .map(proxy -> new InetSocketAddress(proxy.getHostText(), proxy.getPort()))
-                .map(sa -> new Proxy(Type.HTTP, sa))
-                .collect(toSet());
-
-        Collection<InetAddress> addresses = new HashSet<>();
-        for (String localAddress : config.getStringList("ip-addresses")) {
+        
+        rateLimiter = new RateLimiter( maxCon , expireTime );
+        Set < Proxy > proxies = config.getStringList( "proxies" )
+                .stream( )
+                .map( HostAndPort::fromString )
+                .map( proxy -> new InetSocketAddress( proxy.getHostText( ) , proxy.getPort( ) ) )
+                .map( sa -> new Proxy( Type.HTTP , sa ) )
+                .collect( toSet( ) );
+        
+        Collection < InetAddress > addresses = new HashSet <>( );
+        for ( String localAddress : config.getStringList( "ip-addresses" ) ) {
             try {
-                addresses.add(InetAddress.getByName(localAddress.replace('-', '.')));
-            } catch (UnknownHostException ex) {
-                plugin.getLog().error("IP-Address is unknown to us", ex);
+                addresses.add( InetAddress.getByName( localAddress.replace( '-' , '.' ) ) );
+            } catch ( UnknownHostException ex ) {
+                plugin.getLog( ).error( "IP-Address is unknown to us" , ex );
             }
         }
-
-        resolver.setMaxNameRequests(config.getInt("mojang-request-limit"));
-        resolver.setProxySelector(new RotatingProxySelector(proxies));
-        resolver.setOutgoingAddresses(addresses);
+        
+        resolver.setMaxNameRequests( config.getInt( "mojang-request-limit" ) );
+        resolver.setProxySelector( new RotatingProxySelector( proxies ) );
+        resolver.setOutgoingAddresses( addresses );
     }
-
-    private Configuration loadFile(String fileName) throws IOException {
-        ConfigurationProvider configProvider = ConfigurationProvider.getProvider(YamlConfiguration.class);
-
+    
+    private Configuration loadFile( String fileName ) throws IOException{
+        ConfigurationProvider configProvider = ConfigurationProvider.getProvider( YamlConfiguration.class );
+        
         Configuration defaults;
-        try (InputStream defaultStream = getClass().getClassLoader().getResourceAsStream(fileName)) {
-            defaults = configProvider.load(defaultStream);
+        try (InputStream defaultStream = getClass( ).getClassLoader( ).getResourceAsStream( fileName )) {
+            defaults = configProvider.load( defaultStream );
         }
-
-        Path file = plugin.getPluginFolder().resolve(fileName);
-
+        
+        Path file = plugin.getPluginFolder( ).resolve( fileName );
+        
         Configuration config;
-        try (Reader reader = Files.newBufferedReader(file)) {
-            config = configProvider.load(reader, defaults);
+        try (Reader reader = Files.newBufferedReader( file )) {
+            config = configProvider.load( reader , defaults );
         }
-
+        
         // explicitly add keys here, because Configuration.getKeys doesn't return the keys from the default configuration
-        for (String key : defaults.getKeys()) {
-            config.set(key, config.get(key));
+        for ( String key : defaults.getKeys( ) ) {
+            config.set( key , config.get( key ) );
         }
-
+        
         return config;
     }
-
-    public MojangResolver getResolver() {
+    
+    public MojangResolver getResolver( ){
         return resolver;
     }
-
-    public SQLStorage getStorage() {
+    
+    public SQLStorage getStorage( ){
         return storage;
     }
-
-    public T getPlugin() {
+    
+    public T getPlugin( ){
         return plugin;
     }
-
-    public void sendLocaleMessage(String key, C receiver) {
-        String message = localeMessages.get(key);
-        if (message != null) {
-            plugin.sendMultiLineMessage(receiver, message);
+    
+    public void sendLocaleMessage( String key , C receiver ){
+        String message = localeMessages.get( key );
+        if ( message != null ) {
+            plugin.sendMultiLineMessage( receiver , message );
         }
     }
-
-    public String getMessage(String key) {
-        return localeMessages.get(key);
+    
+    public String getMessage( String key ){
+        return localeMessages.get( key );
     }
-
-    public boolean setupDatabase() {
-        String driver = config.getString("driver");
-        if (!checkDriver(driver)) {
+    
+    public boolean setupDatabase( ){
+        String driver = config.getString( "driver" );
+        if ( !checkDriver( driver ) ) {
             return false;
         }
-
-        HikariConfig databaseConfig = new HikariConfig();
-        databaseConfig.setDriverClassName(driver);
-
-        String database = config.getString("database");
-
-        databaseConfig.setConnectionTimeout(config.getInt("timeout", 30) * 1_000L);
-        databaseConfig.setMaxLifetime(config.getInt("lifetime", 30) * 1_000L);
-
-        if (driver.contains("sqlite")) {
-            storage = new SQLiteStorage(this, database, databaseConfig);
+        
+        HikariConfig databaseConfig = new HikariConfig( );
+        databaseConfig.setDriverClassName( driver );
+        
+        String database = config.getString( "database" );
+        
+        databaseConfig.setConnectionTimeout( config.getInt( "timeout" , 30 ) * 1_000L );
+        databaseConfig.setMaxLifetime( config.getInt( "lifetime" , 30 ) * 1_000L );
+        
+        if ( driver.contains( "sqlite" ) ) {
+            storage = new SQLiteStorage( this , database , databaseConfig );
         } else {
-            String host = config.get("host", "");
-            int port = config.get("port", 3306);
-            boolean useSSL = config.get("useSSL", false);
-
-            if (useSSL) {
-                databaseConfig.addDataSourceProperty("allowPublicKeyRetrieval", config.getBoolean("allowPublicKeyRetrieval", false));
-                databaseConfig.addDataSourceProperty("serverRSAPublicKeyFile", config.getString("ServerRSAPublicKeyFile"));
-                databaseConfig.addDataSourceProperty("sslMode", config.getString("sslMode", "Required"));
+            String host = config.get( "host" , "" );
+            int port = config.get( "port" , 3306 );
+            boolean useSSL = config.get( "useSSL" , false );
+            
+            if ( useSSL ) {
+                databaseConfig.addDataSourceProperty( "allowPublicKeyRetrieval" , config.getBoolean( "allowPublicKeyRetrieval" , false ) );
+                databaseConfig.addDataSourceProperty( "serverRSAPublicKeyFile" , config.getString( "ServerRSAPublicKeyFile" ) );
+                databaseConfig.addDataSourceProperty( "sslMode" , config.getString( "sslMode" , "Required" ) );
             }
-
-            databaseConfig.setUsername(config.get("username", ""));
-            databaseConfig.setPassword(config.getString("password"));
-            storage = new MySQLStorage(this, host, port, database, databaseConfig, useSSL);
+            
+            databaseConfig.setUsername( config.get( "username" , "" ) );
+            databaseConfig.setPassword( config.getString( "password" ) );
+            storage = new MySQLStorage( this , host , port , database , databaseConfig , useSSL );
         }
-
+        
         try {
-            storage.createTables();
+            storage.createTables( );
             return true;
-        } catch (Exception ex) {
-            plugin.getLog().warn("Failed to setup database. Disabling plugin...", ex);
+        } catch ( Exception ex ) {
+            plugin.getLog( ).warn( "Failed to setup database. Disabling plugin..." , ex );
             return false;
         }
     }
-
-    private boolean checkDriver(String className) {
+    
+    private boolean checkDriver( String className ){
         try {
-            Class.forName(className);
+            Class.forName( className );
             return true;
-        } catch (ClassNotFoundException notFoundEx) {
-            Logger log = plugin.getLog();
-            log.warn("This driver {} is not supported on this platform", className);
-            log.warn("Please choose MySQL (Spigot+BungeeCord), SQLite (Spigot+Sponge) or MariaDB (Sponge)", notFoundEx);
+        } catch ( ClassNotFoundException notFoundEx ) {
+            Logger log = plugin.getLog( );
+            log.warn( "This driver {} is not supported on this platform" , className );
+            log.warn( "Please choose MySQL (Spigot+BungeeCord), SQLite (Spigot+Sponge) or MariaDB (Sponge)" , notFoundEx );
         }
-
+        
         return false;
     }
-
-    public Configuration getConfig() {
+    
+    public Configuration getConfig( ){
         return config;
     }
-
-    public PasswordGenerator<P> getPasswordGenerator() {
+    
+    public PasswordGenerator < P > getPasswordGenerator( ){
         return passwordGenerator;
     }
-
-    public void setPasswordGenerator(PasswordGenerator<P> passwordGenerator) {
+    
+    public void setPasswordGenerator( PasswordGenerator < P > passwordGenerator ){
         this.passwordGenerator = passwordGenerator;
     }
-
-    public ConcurrentMap<String, Object> getPendingLogin() {
+    
+    public ConcurrentMap < String, Object > getPendingLogin( ){
         return pendingLogin;
     }
-
-    public Collection<UUID> getPendingConfirms() {
+    
+    public Collection < UUID > getPendingConfirms( ){
         return pendingConfirms;
     }
-
-    public AuthPlugin<P> getAuthPluginHook() {
+    
+    public AuthPlugin < P > getAuthPluginHook( ){
         return authPlugin;
     }
-
-    public RateLimiter getRateLimiter() {
-        return rateLimiter;
-    }
-
-    public void setAuthPluginHook(AuthPlugin<P> authPlugin) {
+    
+    public void setAuthPluginHook( AuthPlugin < P > authPlugin ){
         this.authPlugin = authPlugin;
     }
-
-    public void saveDefaultFile(String fileName) {
-        Path dataFolder = plugin.getPluginFolder();
-
+    
+    public RateLimiter getRateLimiter( ){
+        return rateLimiter;
+    }
+    
+    public void saveDefaultFile( String fileName ){
+        Path dataFolder = plugin.getPluginFolder( );
+        
         try {
-            Files.createDirectories(dataFolder);
-
-            Path configFile = dataFolder.resolve(fileName);
-            if (Files.notExists(configFile)) {
-                try (InputStream defaultStream = getClass().getClassLoader().getResourceAsStream(fileName)) {
-                    Files.copy(Objects.requireNonNull(defaultStream), configFile);
+            Files.createDirectories( dataFolder );
+            
+            Path configFile = dataFolder.resolve( fileName );
+            if ( Files.notExists( configFile ) ) {
+                try (InputStream defaultStream = getClass( ).getClassLoader( ).getResourceAsStream( fileName )) {
+                    Files.copy( Objects.requireNonNull( defaultStream ) , configFile );
                 }
             }
-        } catch (IOException ioExc) {
-            plugin.getLog().error("Cannot create plugin folder {}", dataFolder, ioExc);
+        } catch ( IOException ioExc ) {
+            plugin.getLog( ).error( "Cannot create plugin folder {}" , dataFolder , ioExc );
         }
     }
-
-    public void close() {
-        plugin.getLog().info("Safely shutting down scheduler. This could take up to one minute.");
-        plugin.getScheduler().shutdown();
-
-        if (storage != null) {
-            storage.close();
+    
+    public void close( ){
+        plugin.getLog( ).info( "Safely shutting down scheduler. This could take up to one minute." );
+        plugin.getScheduler( ).shutdown( );
+        
+        if ( storage != null ) {
+            storage.close( );
         }
     }
 }

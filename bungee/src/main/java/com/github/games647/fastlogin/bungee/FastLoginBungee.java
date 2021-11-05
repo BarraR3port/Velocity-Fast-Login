@@ -44,13 +44,6 @@ import com.google.common.collect.MapMaker;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-
-import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ThreadFactory;
-
 import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.connection.PendingConnection;
@@ -59,142 +52,147 @@ import net.md_5.bungee.api.connection.Server;
 import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.api.plugin.PluginManager;
 import net.md_5.bungee.api.scheduler.GroupedThreadFactory;
-
 import org.geysermc.floodgate.api.FloodgateApi;
 import org.slf4j.Logger;
+
+import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ThreadFactory;
 
 /**
  * BungeeCord version of FastLogin. This plugin keeps track on online mode connections.
  */
-public class FastLoginBungee extends Plugin implements PlatformPlugin<CommandSender> {
-
-    private final ConcurrentMap<PendingConnection, BungeeLoginSession> session = new MapMaker().weakKeys().makeMap();
-
-    private FastLoginCore<ProxiedPlayer, CommandSender, FastLoginBungee> core;
+public class FastLoginBungee extends Plugin implements PlatformPlugin < CommandSender > {
+    
+    private final ConcurrentMap < PendingConnection, BungeeLoginSession > session = new MapMaker( ).weakKeys( ).makeMap( );
+    
+    private FastLoginCore < ProxiedPlayer, CommandSender, FastLoginBungee > core;
     private AsyncScheduler scheduler;
     private FloodgateService floodgateService;
     private Logger logger;
-
+    
     @Override
-    public void onEnable() {
-        logger = CommonUtil.createLoggerFromJDK(getLogger());
-        scheduler = new AsyncScheduler(logger, getThreadFactory());
-
-        core = new FastLoginCore<>(this);
-        core.load();
-        if (!core.setupDatabase()) {
+    public void onEnable( ){
+        logger = CommonUtil.createLoggerFromJDK( getLogger( ) );
+        scheduler = new AsyncScheduler( logger , getThreadFactory( ) );
+        
+        core = new FastLoginCore <>( this );
+        core.load( );
+        if ( !core.setupDatabase( ) ) {
             return;
         }
-
-        if (isPluginInstalled("floodgate")) {
-            floodgateService = new FloodgateService(FloodgateApi.getInstance(), core);
+        
+        if ( isPluginInstalled( "floodgate" ) ) {
+            floodgateService = new FloodgateService( FloodgateApi.getInstance( ) , core );
         }
-
+        
         //events
-        PluginManager pluginManager = getProxy().getPluginManager();
-
-        ConnectListener connectListener = new ConnectListener(this, core.getRateLimiter());
-
-        pluginManager.registerListener(this, connectListener);
-        pluginManager.registerListener(this, new PluginMessageListener(this));
-
+        PluginManager pluginManager = getProxy( ).getPluginManager( );
+        
+        ConnectListener connectListener = new ConnectListener( this , core.getRateLimiter( ) );
+        
+        pluginManager.registerListener( this , connectListener );
+        pluginManager.registerListener( this , new PluginMessageListener( this ) );
+        
         //this is required to listen to incoming messages from the server
-        getProxy().registerChannel(NamespaceKey.getCombined(getName(), ChangePremiumMessage.CHANGE_CHANNEL));
-        getProxy().registerChannel(NamespaceKey.getCombined(getName(), SuccessMessage.SUCCESS_CHANNEL));
-
-        registerHook();
+        getProxy( ).registerChannel( NamespaceKey.getCombined( getName( ) , ChangePremiumMessage.CHANGE_CHANNEL ) );
+        getProxy( ).registerChannel( NamespaceKey.getCombined( getName( ) , SuccessMessage.SUCCESS_CHANNEL ) );
+        
+        registerHook( );
     }
-
+    
     @Override
-    public void onDisable() {
-        if (core != null) {
-            core.close();
+    public void onDisable( ){
+        if ( core != null ) {
+            core.close( );
         }
     }
-
-    public FastLoginCore<ProxiedPlayer, CommandSender, FastLoginBungee> getCore() {
+    
+    public FastLoginCore < ProxiedPlayer, CommandSender, FastLoginBungee > getCore( ){
         return core;
     }
-
-    public ConcurrentMap<PendingConnection, BungeeLoginSession> getSession() {
+    
+    public ConcurrentMap < PendingConnection, BungeeLoginSession > getSession( ){
         return session;
     }
-
-    private void registerHook() {
+    
+    private void registerHook( ){
         try {
-            List<Class<? extends AuthPlugin<ProxiedPlayer>>> hooks = Arrays.asList(
-                    BungeeAuthHook.class, BungeeCordAuthenticatorBungeeHook.class, SodionAuthHook.class);
-
-            for (Class<? extends AuthPlugin<ProxiedPlayer>> clazz : hooks) {
-                String pluginName = clazz.getSimpleName();
-                pluginName = pluginName.substring(0, pluginName.length() - "Hook".length());
+            List < Class < ? extends AuthPlugin < ProxiedPlayer > > > hooks = Arrays.asList(
+                    BungeeAuthHook.class , BungeeCordAuthenticatorBungeeHook.class , SodionAuthHook.class );
+            
+            for ( Class < ? extends AuthPlugin < ProxiedPlayer > > clazz : hooks ) {
+                String pluginName = clazz.getSimpleName( );
+                pluginName = pluginName.substring( 0 , pluginName.length( ) - "Hook".length( ) );
                 //uses only member classes which uses AuthPlugin interface (skip interfaces)
-                Plugin plugin = getProxy().getPluginManager().getPlugin(pluginName);
-                if (plugin != null) {
-                    logger.info("Hooking into auth plugin: {}", pluginName);
+                Plugin plugin = getProxy( ).getPluginManager( ).getPlugin( pluginName );
+                if ( plugin != null ) {
+                    logger.info( "Hooking into auth plugin: {}" , pluginName );
                     core.setAuthPluginHook(
-                            clazz.getDeclaredConstructor(FastLoginBungee.class).newInstance(this));
+                            clazz.getDeclaredConstructor( FastLoginBungee.class ).newInstance( this ) );
                     break;
                 }
             }
-        } catch (ReflectiveOperationException ex) {
-            logger.error("Couldn't load the auth hook class", ex);
+        } catch ( ReflectiveOperationException ex ) {
+            logger.error( "Couldn't load the auth hook class" , ex );
         }
     }
-
-    public void sendPluginMessage(Server server, ChannelMessage message) {
-        if (server != null) {
-            ByteArrayDataOutput dataOutput = ByteStreams.newDataOutput();
-            message.writeTo(dataOutput);
-
-            NamespaceKey channel = new NamespaceKey(getName(), message.getChannelName());
-            server.sendData(channel.getCombinedName(), dataOutput.toByteArray());
+    
+    public void sendPluginMessage( Server server , ChannelMessage message ){
+        if ( server != null ) {
+            ByteArrayDataOutput dataOutput = ByteStreams.newDataOutput( );
+            message.writeTo( dataOutput );
+            
+            NamespaceKey channel = new NamespaceKey( getName( ) , message.getChannelName( ) );
+            server.sendData( channel.getCombinedName( ) , dataOutput.toByteArray( ) );
         }
     }
-
+    
     @Override
-    public String getName() {
-        return getDescription().getName();
+    public String getName( ){
+        return getDescription( ).getName( );
     }
-
+    
     @Override
-    public Path getPluginFolder() {
-        return getDataFolder().toPath();
+    public Path getPluginFolder( ){
+        return getDataFolder( ).toPath( );
     }
-
+    
     @Override
-    public Logger getLog() {
+    public Logger getLog( ){
         return logger;
     }
-
+    
     @Override
-    public void sendMessage(CommandSender receiver, String message) {
-        receiver.sendMessage(TextComponent.fromLegacyText(message));
+    public void sendMessage( CommandSender receiver , String message ){
+        receiver.sendMessage( TextComponent.fromLegacyText( message ) );
     }
-
+    
     @Override
     @SuppressWarnings("deprecation")
-    public ThreadFactory getThreadFactory() {
-        return new ThreadFactoryBuilder()
-                .setNameFormat(getName() + " Pool Thread #%1$d")
+    public ThreadFactory getThreadFactory( ){
+        return new ThreadFactoryBuilder( )
+                .setNameFormat( getName( ) + " Pool Thread #%1$d" )
                 //Hikari create daemons by default
-                .setDaemon(true)
-                .setThreadFactory(new GroupedThreadFactory(this, getName()))
-                .build();
+                .setDaemon( true )
+                .setThreadFactory( new GroupedThreadFactory( this , getName( ) ) )
+                .build( );
     }
-
+    
     @Override
-    public AsyncScheduler getScheduler() {
+    public AsyncScheduler getScheduler( ){
         return scheduler;
     }
-
+    
     @Override
-    public boolean isPluginInstalled(String name) {
-        return getProxy().getPluginManager().getPlugin(name) != null;
+    public boolean isPluginInstalled( String name ){
+        return getProxy( ).getPluginManager( ).getPlugin( name ) != null;
     }
-
+    
     @Override
-    public FloodgateService getFloodgateService() {
+    public FloodgateService getFloodgateService( ){
         return floodgateService;
     }
 }

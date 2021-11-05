@@ -44,48 +44,48 @@ import org.bukkit.event.player.PlayerLoginEvent.Result;
 import java.lang.reflect.InvocationTargetException;
 
 public class SkinApplyListener implements Listener {
-
-    private static final Class<?> GAME_PROFILE = MinecraftReflection.getGameProfileClass();
-    private static final MethodAccessor GET_PROPERTIES = Accessors.getMethodAccessor(GAME_PROFILE, "getProperties");
-
+    
+    private static final Class < ? > GAME_PROFILE = MinecraftReflection.getGameProfileClass( );
+    private static final MethodAccessor GET_PROPERTIES = Accessors.getMethodAccessor( GAME_PROFILE , "getProperties" );
+    
     private final FastLoginBukkit plugin;
-
-    public SkinApplyListener(FastLoginBukkit plugin) {
+    
+    public SkinApplyListener( FastLoginBukkit plugin ){
         this.plugin = plugin;
     }
-
+    
     @EventHandler(priority = EventPriority.LOW)
     //run this on the loginEvent to let skins plugins see the skin like in normal Minecraft behaviour
-    public void onPlayerLogin(PlayerLoginEvent loginEvent) {
-        if (loginEvent.getResult() != Result.ALLOWED) {
+    public void onPlayerLogin( PlayerLoginEvent loginEvent ){
+        if ( loginEvent.getResult( ) != Result.ALLOWED ) {
             return;
         }
-
-        Player player = loginEvent.getPlayer();
-
+        
+        Player player = loginEvent.getPlayer( );
+        
         //go through every session, because player.getAddress is null
         //loginEvent.getAddress is just a InetAddress not InetSocketAddress, so not unique enough
-        for (BukkitLoginSession session : plugin.getLoginSessions().values()) {
-            if (session.getUsername().equals(player.getName())) {
-                session.getSkin().ifPresent(skin -> applySkin(player, skin.getValue(), skin.getSignature()));
+        for ( BukkitLoginSession session : plugin.getLoginSessions( ).values( ) ) {
+            if ( session.getUsername( ).equals( player.getName( ) ) ) {
+                session.getSkin( ).ifPresent( skin -> applySkin( player , skin.getValue( ) , skin.getSignature( ) ) );
                 break;
             }
         }
     }
-
-    private void applySkin(Player player, String skinData, String signature) {
-        WrappedGameProfile gameProfile = WrappedGameProfile.fromPlayer(player);
-
-        WrappedSignedProperty skin = WrappedSignedProperty.fromValues(Textures.KEY, skinData, signature);
+    
+    private void applySkin( Player player , String skinData , String signature ){
+        WrappedGameProfile gameProfile = WrappedGameProfile.fromPlayer( player );
+        
+        WrappedSignedProperty skin = WrappedSignedProperty.fromValues( Textures.KEY , skinData , signature );
         try {
-            gameProfile.getProperties().put(Textures.KEY, skin);
-        } catch (ClassCastException castException) {
+            gameProfile.getProperties( ).put( Textures.KEY , skin );
+        } catch ( ClassCastException castException ) {
             //Cauldron, MCPC, Thermos, ...
-            Object map = GET_PROPERTIES.invoke(gameProfile.getHandle());
+            Object map = GET_PROPERTIES.invoke( gameProfile.getHandle( ) );
             try {
-                MethodUtils.invokeMethod(map, "put", new Object[]{Textures.KEY, skin.getHandle()});
-            } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
-                plugin.getLog().error("Error setting premium skin of: {}", player, ex);
+                MethodUtils.invokeMethod( map , "put" , new Object[]{Textures.KEY , skin.getHandle( )} );
+            } catch ( NoSuchMethodException | IllegalAccessException | InvocationTargetException ex ) {
+                plugin.getLog( ).error( "Error setting premium skin of: {}" , player , ex );
             }
         }
     }

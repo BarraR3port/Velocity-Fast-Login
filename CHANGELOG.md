@@ -150,8 +150,7 @@
 * Fix race condition in BungeeCord
 * Fix dead lock in xAuth
 * Added API methods for plugins to set their own password generator
-* Added API methods for plugins to set their own auth plugin hook
-=> Added support for AdvancedLogin
+* Added API methods for plugins to set their own auth plugin hook => Added support for AdvancedLogin
 
 ### 1.1
 
@@ -212,7 +211,7 @@
 ### 0.3.2
 
 * Run packet readers in a different thread (separated from the Netty I/O Thread)
--> Improves performance
+  -> Improves performance
 * Fixed Plugin disable if the server is in online mode but have to be in offline mode
 
 ### 0.3.1
@@ -244,6 +243,7 @@
 * Compile project with Java 7 :(
 
 ### 0.2.1
+
 * A couple of security fixes (premium players cannot longer steal the account of a cracked account)
 * Added a /premium command to mark you as premium player
 
@@ -257,4 +257,5 @@
 * Added better error handling
 
 ### 0.1
+
 * First release

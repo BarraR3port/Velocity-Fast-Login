@@ -40,60 +40,59 @@ import com.velocitypowered.api.proxy.Player;
 
 import java.util.concurrent.ExecutionException;
 
-public class AsyncPremiumCheck extends JoinManagement<Player, CommandSource, VelocityLoginSource>
+public class AsyncPremiumCheck extends JoinManagement < Player, CommandSource, VelocityLoginSource >
         implements Runnable {
-
+    
     private final FastLoginVelocity plugin;
     private final String username;
+    private final InboundConnection connection;
     private Continuation continuation;
     private PreLoginEvent preLoginEvent;
-    private final InboundConnection connection;
-
-    public AsyncPremiumCheck(FastLoginVelocity plugin, InboundConnection connection, String username, Continuation continuation, PreLoginEvent preLoginEvent) {
-        super(plugin.getCore(), plugin.getCore().getAuthPluginHook(), plugin.getFloodgateService());
+    
+    public AsyncPremiumCheck( FastLoginVelocity plugin , InboundConnection connection , String username , Continuation continuation , PreLoginEvent preLoginEvent ){
+        super( plugin.getCore( ) , plugin.getCore( ).getAuthPluginHook( ) , plugin.getFloodgateService( ) );
         this.plugin = plugin;
         this.connection = connection;
         this.username = username;
         this.continuation = continuation;
         this.preLoginEvent = preLoginEvent;
     }
-
+    
     @Override
-    public void run() {
-        plugin.getSession().remove(connection.getRemoteAddress());
+    public void run( ){
+        plugin.getSession( ).remove( connection.getRemoteAddress( ) );
         try {
-            super.onLogin(username, new VelocityLoginSource(connection, preLoginEvent));
+            super.onLogin( username , new VelocityLoginSource( connection , preLoginEvent ) );
         } finally {
-            continuation.resume();
+            continuation.resume( );
         }
     }
-
+    
     @Override
-    public FastLoginPreLoginEvent callFastLoginPreLoginEvent(String username, VelocityLoginSource source, StoredProfile profile) {
-        VelocityFastLoginPreLoginEvent event = new VelocityFastLoginPreLoginEvent(username, source, profile);
+    public FastLoginPreLoginEvent callFastLoginPreLoginEvent( String username , VelocityLoginSource source , StoredProfile profile ){
+        VelocityFastLoginPreLoginEvent event = new VelocityFastLoginPreLoginEvent( username , source , profile );
         try {
-            return plugin.getProxy().getEventManager().fire(event).get();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt(); // Restore the interrupt flag
+            return plugin.getProxy( ).getEventManager( ).fire( event ).get( );
+        } catch ( InterruptedException e ) {
+            Thread.currentThread( ).interrupt( ); // Restore the interrupt flag
             return event;
-        } catch (ExecutionException e) {
-            core.getPlugin().getLog().error("Error firing event", e);
+        } catch ( ExecutionException e ) {
+            core.getPlugin( ).getLog( ).error( "Error firing event" , e );
             return event;
         }
     }
-
+    
     @Override
-    public void requestPremiumLogin(VelocityLoginSource source, StoredProfile profile,
-                                    String username, boolean registered) {
-        source.enableOnlinemode();
-        plugin.getSession().put(source.getConnection().getRemoteAddress(), new VelocityLoginSession(username, registered, profile));
-
-        String ip = source.getAddress().getAddress().getHostAddress();
-        plugin.getCore().getPendingLogin().put(ip + username, new Object());
+    public void requestPremiumLogin( VelocityLoginSource source , StoredProfile profile , String username , boolean registered ){
+        source.enableOnlinemode( );
+        plugin.getSession( ).put( source.getConnection( ).getRemoteAddress( ) , new VelocityLoginSession( username , registered , profile ) );
+        
+        String ip = source.getAddress( ).getAddress( ).getHostAddress( );
+        plugin.getCore( ).getPendingLogin( ).put( ip + username , new Object( ) );
     }
-
+    
     @Override
-    public void startCrackedSession(VelocityLoginSource source, StoredProfile profile, String username) {
-        plugin.getSession().put(source.getConnection().getRemoteAddress(), new VelocityLoginSession(username, false, profile));
+    public void startCrackedSession( VelocityLoginSource source , StoredProfile profile , String username ){
+        plugin.getSession( ).put( source.getConnection( ).getRemoteAddress( ) , new VelocityLoginSession( username , false , profile ) );
     }
 }

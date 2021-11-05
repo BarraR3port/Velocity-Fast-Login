@@ -31,33 +31,33 @@ import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 
 public class BukkitFastLoginPremiumToggleEvent extends Event implements FastLoginPremiumToggleEvent {
-
-    private static final HandlerList handlers = new HandlerList();
+    
+    private static final HandlerList handlers = new HandlerList( );
     private final StoredProfile profile;
     private final PremiumToggleReason reason;
-
-    public BukkitFastLoginPremiumToggleEvent(StoredProfile profile, PremiumToggleReason reason) {
-        super(true);
+    
+    public BukkitFastLoginPremiumToggleEvent( StoredProfile profile , PremiumToggleReason reason ){
+        super( true );
         this.profile = profile;
         this.reason = reason;
     }
-
-    @Override
-    public StoredProfile getProfile() {
-        return profile;
-    }
-
-    @Override
-    public PremiumToggleReason getReason() {
-        return reason;
-    }
-
-    @Override
-    public HandlerList getHandlers() {
+    
+    public static HandlerList getHandlerList( ){
         return handlers;
     }
-
-    public static HandlerList getHandlerList() {
+    
+    @Override
+    public StoredProfile getProfile( ){
+        return profile;
+    }
+    
+    @Override
+    public PremiumToggleReason getReason( ){
+        return reason;
+    }
+    
+    @Override
+    public HandlerList getHandlers( ){
         return handlers;
     }
 }

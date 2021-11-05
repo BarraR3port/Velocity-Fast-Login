@@ -25,68 +25,63 @@
  */
 package com.github.games647.fastlogin.bungee.hook;
 
-import java.sql.SQLException;
-
 import com.github.games647.fastlogin.bungee.FastLoginBungee;
 import com.github.games647.fastlogin.core.hooks.AuthPlugin;
-
 import de.xxschrandxx.bca.bungee.BungeeCordAuthenticatorBungee;
 import de.xxschrandxx.bca.bungee.api.BungeeCordAuthenticatorBungeeAPI;
-
 import net.md_5.bungee.api.connection.ProxiedPlayer;
+
+import java.sql.SQLException;
 
 /**
  * GitHub:
  * https://github.com/xXSchrandXx/SpigotPlugins/tree/master/BungeeCordAuthenticator
- *
+ * <p>
  * Project page:
- *
+ * <p>
  * Spigot: https://www.spigotmc.org/resources/bungeecordauthenticator.87669/
  */
-public class BungeeCordAuthenticatorBungeeHook implements AuthPlugin<ProxiedPlayer> {
-
+public class BungeeCordAuthenticatorBungeeHook implements AuthPlugin < ProxiedPlayer > {
+    
     public final BungeeCordAuthenticatorBungeeAPI api;
-
-    public BungeeCordAuthenticatorBungeeHook(FastLoginBungee plugin) {
-        api = ((BungeeCordAuthenticatorBungee) plugin.getProxy().getPluginManager()
-                .getPlugin("BungeeCordAuthenticatorBungee")).getAPI();
-        plugin.getLog().info("BungeeCordAuthenticatorHook | Hooked successful!");
+    
+    public BungeeCordAuthenticatorBungeeHook( FastLoginBungee plugin ){
+        api = (( BungeeCordAuthenticatorBungee ) plugin.getProxy( ).getPluginManager( )
+                .getPlugin( "BungeeCordAuthenticatorBungee" )).getAPI( );
+        plugin.getLog( ).info( "BungeeCordAuthenticatorHook | Hooked successful!" );
     }
-
+    
     @Override
-    public boolean forceLogin(ProxiedPlayer player) {
-        if (api.isAuthenticated(player)) {
+    public boolean forceLogin( ProxiedPlayer player ){
+        if ( api.isAuthenticated( player ) ) {
             return true;
         } else {
             try {
-                api.setAuthenticated(player);
-            }
-            catch (SQLException e) {
-                e.printStackTrace();
+                api.setAuthenticated( player );
+            } catch ( SQLException e ) {
+                e.printStackTrace( );
                 return false;
             }
             return true;
         }
     }
-
+    
     @Override
-    public boolean isRegistered(String playerName) {
+    public boolean isRegistered( String playerName ){
         try {
-            return api.getSQL().checkPlayerEntry(playerName);
-        }
-        catch (SQLException e) {
-            e.printStackTrace();
+            return api.getSQL( ).checkPlayerEntry( playerName );
+        } catch ( SQLException e ) {
+            e.printStackTrace( );
             return false;
         }
     }
-
+    
     @Override
-    public boolean forceRegister(ProxiedPlayer player, String password) {
+    public boolean forceRegister( ProxiedPlayer player , String password ){
         try {
-            return api.createPlayerEntry(player, password);
-        }
-        catch (SQLException e) {
-            e.printStackTrace();
+            return api.createPlayerEntry( player , password );
+        } catch ( SQLException e ) {
+            e.printStackTrace( );
             return false;
         }
     }

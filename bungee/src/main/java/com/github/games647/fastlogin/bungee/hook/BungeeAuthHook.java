@@ -27,39 +27,37 @@ package com.github.games647.fastlogin.bungee.hook;
 
 import com.github.games647.fastlogin.bungee.FastLoginBungee;
 import com.github.games647.fastlogin.core.hooks.AuthPlugin;
-
 import me.vik1395.BungeeAuth.Main;
 import me.vik1395.BungeeAuthAPI.RequestHandler;
-
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 
 /**
  * GitHub: https://github.com/vik1395/BungeeAuth-Minecraft
- *
+ * <p>
  * Project page:
- *
+ * <p>
  * Spigot: https://www.spigotmc.org/resources/bungeeauth.493/
  */
-public class BungeeAuthHook implements AuthPlugin<ProxiedPlayer> {
-
-    private final RequestHandler requestHandler = new RequestHandler();
-
-    public BungeeAuthHook(FastLoginBungee plugin) {
+public class BungeeAuthHook implements AuthPlugin < ProxiedPlayer > {
+    
+    private final RequestHandler requestHandler = new RequestHandler( );
+    
+    public BungeeAuthHook( FastLoginBungee plugin ){
     }
-
+    
     @Override
-    public boolean forceLogin(ProxiedPlayer player) {
-        String playerName = player.getName();
-        return Main.plonline.contains(playerName) || requestHandler.forceLogin(playerName);
+    public boolean forceLogin( ProxiedPlayer player ){
+        String playerName = player.getName( );
+        return Main.plonline.contains( playerName ) || requestHandler.forceLogin( playerName );
     }
-
+    
     @Override
-    public boolean isRegistered(String playerName) {
-        return requestHandler.isRegistered(playerName);
+    public boolean isRegistered( String playerName ){
+        return requestHandler.isRegistered( playerName );
     }
-
+    
     @Override
-    public boolean forceRegister(ProxiedPlayer player, String password) {
-        return requestHandler.forceRegister(player, password);
+    public boolean forceRegister( ProxiedPlayer player , String password ){
+        return requestHandler.forceRegister( player , password );
     }
 }

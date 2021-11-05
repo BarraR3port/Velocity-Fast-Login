@@ -33,45 +33,45 @@ import com.velocitypowered.api.event.ResultedEvent;
 import java.util.Objects;
 
 public class VelocityFastLoginAutoLoginEvent
-        implements FastLoginAutoLoginEvent, ResultedEvent<ResultedEvent.GenericResult> {
-
+        implements FastLoginAutoLoginEvent, ResultedEvent < ResultedEvent.GenericResult > {
+    
     private final LoginSession session;
     private final StoredProfile profile;
     private boolean cancelled;
-
-    public VelocityFastLoginAutoLoginEvent(LoginSession session, StoredProfile profile) {
+    
+    public VelocityFastLoginAutoLoginEvent( LoginSession session , StoredProfile profile ){
         this.session = session;
         this.profile = profile;
     }
-
+    
     @Override
-    public LoginSession getSession() {
+    public LoginSession getSession( ){
         return session;
     }
-
+    
     @Override
-    public StoredProfile getProfile() {
+    public StoredProfile getProfile( ){
         return profile;
     }
-
+    
     @Override
-    public boolean isCancelled() {
+    public boolean isCancelled( ){
         return cancelled;
     }
-
+    
     @Override
-    public void setCancelled(boolean cancelled) {
+    public void setCancelled( boolean cancelled ){
         this.cancelled = cancelled;
     }
-
-
+    
+    
     @Override
-    public GenericResult getResult() {
-        return cancelled ? GenericResult.denied(): GenericResult.allowed();
+    public GenericResult getResult( ){
+        return cancelled ? GenericResult.denied( ) : GenericResult.allowed( );
     }
-
+    
     @Override
-    public void setResult(GenericResult result) {
-         cancelled = Objects.requireNonNull(result) != GenericResult.allowed();
+    public void setResult( GenericResult result ){
+        cancelled = Objects.requireNonNull( result ) != GenericResult.allowed( );
     }
 }

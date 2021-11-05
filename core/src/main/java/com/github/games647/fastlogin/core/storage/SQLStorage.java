@@ -31,11 +31,7 @@ import com.github.games647.fastlogin.core.shared.FastLoginCore;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
@@ -44,9 +40,7 @@ import java.util.concurrent.ThreadFactory;
 import static java.sql.Statement.RETURN_GENERATED_KEYS;
 
 public abstract class SQLStorage implements AuthStorage {
-
-    private static final String JDBC_PROTOCOL = "jdbc:";
-
+    
     protected static final String PREMIUM_TABLE = "premium";
     protected static final String CREATE_TABLE_STMT = "CREATE TABLE IF NOT EXISTS `" + PREMIUM_TABLE + "` ("
             + "`UserID` INTEGER PRIMARY KEY AUTO_INCREMENT, "
@@ -58,7 +52,6 @@ public abstract class SQLStorage implements AuthStorage {
             //the premium shouldn't steal the cracked account by changing the name
             + "UNIQUE (`Name`) "
             + ')';
-
     protected static final String LOAD_BY_NAME = "SELECT * FROM `" + PREMIUM_TABLE + "` WHERE `Name`=? LIMIT 1";
     protected static final String LOAD_BY_UUID = "SELECT * FROM `" + PREMIUM_TABLE + "` WHERE `UUID`=? LIMIT 1";
     protected static final String INSERT_PROFILE = "INSERT INTO `" + PREMIUM_TABLE
@@ -66,127 +59,127 @@ public abstract class SQLStorage implements AuthStorage {
     // limit not necessary here, because it's unique
     protected static final String UPDATE_PROFILE = "UPDATE `" + PREMIUM_TABLE
             + "` SET `UUID`=?, `Name`=?, `Premium`=?, `LastIp`=?, `LastLogin`=CURRENT_TIMESTAMP WHERE `UserID`=?";
-
-    protected final FastLoginCore<?, ?, ?> core;
+    private static final String JDBC_PROTOCOL = "jdbc:";
+    protected final FastLoginCore < ?, ?, ? > core;
     protected final HikariDataSource dataSource;
-
-    public SQLStorage(FastLoginCore<?, ?, ?> core, String jdbcURL, HikariConfig config) {
+    
+    public SQLStorage( FastLoginCore < ?, ?, ? > core , String jdbcURL , HikariConfig config ){
         this.core = core;
-        config.setPoolName(core.getPlugin().getName());
-
-        ThreadFactory platformThreadFactory = core.getPlugin().getThreadFactory();
-        if (platformThreadFactory != null) {
-            config.setThreadFactory(platformThreadFactory);
+        config.setPoolName( core.getPlugin( ).getName( ) );
+        
+        ThreadFactory platformThreadFactory = core.getPlugin( ).getThreadFactory( );
+        if ( platformThreadFactory != null ) {
+            config.setThreadFactory( platformThreadFactory );
         }
-
-        config.setJdbcUrl(JDBC_PROTOCOL + jdbcURL);
-        this.dataSource = new HikariDataSource(config);
+        
+        config.setJdbcUrl( JDBC_PROTOCOL + jdbcURL );
+        this.dataSource = new HikariDataSource( config );
     }
-
-    public void createTables() throws SQLException {
+    
+    public void createTables( ) throws SQLException{
         // choose surrogate PK(ID), because UUID can be null for offline players
         // if UUID is always Premium UUID we would have to update offline player entries on insert
         // name cannot be PK, because it can be changed for premium players
-
+        
         //todo: add unique uuid index usage
-        try (Connection con = dataSource.getConnection();
-             Statement createStmt = con.createStatement()) {
-            createStmt.executeUpdate(CREATE_TABLE_STMT);
+        try (Connection con = dataSource.getConnection( );
+             Statement createStmt = con.createStatement( )) {
+            createStmt.executeUpdate( CREATE_TABLE_STMT );
         }
     }
-
+    
     @Override
-    public StoredProfile loadProfile(String name) {
-        try (Connection con = dataSource.getConnection();
-             PreparedStatement loadStmt = con.prepareStatement(LOAD_BY_NAME)
+    public StoredProfile loadProfile( String name ){
+        try (Connection con = dataSource.getConnection( );
+             PreparedStatement loadStmt = con.prepareStatement( LOAD_BY_NAME )
         ) {
-            loadStmt.setString(1, name);
-
-            try (ResultSet resultSet = loadStmt.executeQuery()) {
-                return parseResult(resultSet).orElseGet(() -> new StoredProfile(null, name, false, ""));
+            loadStmt.setString( 1 , name );
+            
+            try (ResultSet resultSet = loadStmt.executeQuery( )) {
+                return parseResult( resultSet ).orElseGet( ( ) -> new StoredProfile( null , name , false , "" ) );
             }
-        } catch (SQLException sqlEx) {
-            core.getPlugin().getLog().error("Failed to query profile: {}", name, sqlEx);
+        } catch ( SQLException sqlEx ) {
+            core.getPlugin( ).getLog( ).error( "Failed to query profile: {}" , name , sqlEx );
         }
-
+        
         return null;
     }
-
+    
     @Override
-    public StoredProfile loadProfile(UUID uuid) {
-        try (Connection con = dataSource.getConnection();
-             PreparedStatement loadStmt = con.prepareStatement(LOAD_BY_UUID)) {
-            loadStmt.setString(1, UUIDAdapter.toMojangId(uuid));
-
-            try (ResultSet resultSet = loadStmt.executeQuery()) {
-                return parseResult(resultSet).orElse(null);
+    public StoredProfile loadProfile( UUID uuid ){
+        try (Connection con = dataSource.getConnection( );
+             PreparedStatement loadStmt = con.prepareStatement( LOAD_BY_UUID )) {
+            loadStmt.setString( 1 , UUIDAdapter.toMojangId( uuid ) );
+            
+            try (ResultSet resultSet = loadStmt.executeQuery( )) {
+                return parseResult( resultSet ).orElse( null );
             }
-        } catch (SQLException sqlEx) {
-            core.getPlugin().getLog().error("Failed to query profile: {}", uuid, sqlEx);
+        } catch ( SQLException sqlEx ) {
+            core.getPlugin( ).getLog( ).error( "Failed to query profile: {}" , uuid , sqlEx );
         }
-
+        
         return null;
     }
-
-    private Optional<StoredProfile> parseResult(ResultSet resultSet) throws SQLException {
-        if (resultSet.next()) {
-            long userId = resultSet.getInt(1);
-
-            UUID uuid = Optional.ofNullable(resultSet.getString(2)).map(UUIDAdapter::parseId).orElse(null);
-
-            String name = resultSet.getString(3);
-            boolean premium = resultSet.getBoolean(4);
-            String lastIp = resultSet.getString(5);
-            Instant lastLogin = resultSet.getTimestamp(6).toInstant();
-            return Optional.of(new StoredProfile(userId, uuid, name, premium, lastIp, lastLogin));
+    
+    private Optional < StoredProfile > parseResult( ResultSet resultSet ) throws SQLException{
+        if ( resultSet.next( ) ) {
+            long userId = resultSet.getInt( 1 );
+            
+            UUID uuid = Optional.ofNullable( resultSet.getString( 2 ) ).map( UUIDAdapter::parseId ).orElse( null );
+            
+            String name = resultSet.getString( 3 );
+            boolean premium = resultSet.getBoolean( 4 );
+            String lastIp = resultSet.getString( 5 );
+            Instant lastLogin = resultSet.getTimestamp( 6 ).toInstant( );
+            return Optional.of( new StoredProfile( userId , uuid , name , premium , lastIp , lastLogin ) );
         }
-
-        return Optional.empty();
+        
+        return Optional.empty( );
     }
-
+    
     @Override
-    public void save(StoredProfile playerProfile) {
-        try (Connection con = dataSource.getConnection()) {
-            String uuid = playerProfile.getOptId().map(UUIDAdapter::toMojangId).orElse(null);
-
-            playerProfile.getSaveLock().lock();
+    public void save( StoredProfile playerProfile ){
+        try (Connection con = dataSource.getConnection( )) {
+            String uuid = playerProfile.getOptId( ).map( UUIDAdapter::toMojangId ).orElse( null );
+            
+            playerProfile.getSaveLock( ).lock( );
             try {
-                if (playerProfile.isSaved()) {
-                    try (PreparedStatement saveStmt = con.prepareStatement(UPDATE_PROFILE)) {
-                        saveStmt.setString(1, uuid);
-                        saveStmt.setString(2, playerProfile.getName());
-                        saveStmt.setBoolean(3, playerProfile.isPremium());
-                        saveStmt.setString(4, playerProfile.getLastIp());
-
-                        saveStmt.setLong(5, playerProfile.getRowId());
-                        saveStmt.execute();
+                if ( playerProfile.isSaved( ) ) {
+                    try (PreparedStatement saveStmt = con.prepareStatement( UPDATE_PROFILE )) {
+                        saveStmt.setString( 1 , uuid );
+                        saveStmt.setString( 2 , playerProfile.getName( ) );
+                        saveStmt.setBoolean( 3 , playerProfile.isPremium( ) );
+                        saveStmt.setString( 4 , playerProfile.getLastIp( ) );
+                        
+                        saveStmt.setLong( 5 , playerProfile.getRowId( ) );
+                        saveStmt.execute( );
                     }
                 } else {
-                    try (PreparedStatement saveStmt = con.prepareStatement(INSERT_PROFILE, RETURN_GENERATED_KEYS)) {
-                        saveStmt.setString(1, uuid);
-
-                        saveStmt.setString(2, playerProfile.getName());
-                        saveStmt.setBoolean(3, playerProfile.isPremium());
-                        saveStmt.setString(4, playerProfile.getLastIp());
-
-                        saveStmt.execute();
-                        try (ResultSet generatedKeys = saveStmt.getGeneratedKeys()) {
-                            if (generatedKeys.next()) {
-                                playerProfile.setRowId(generatedKeys.getInt(1));
+                    try (PreparedStatement saveStmt = con.prepareStatement( INSERT_PROFILE , RETURN_GENERATED_KEYS )) {
+                        saveStmt.setString( 1 , uuid );
+                        
+                        saveStmt.setString( 2 , playerProfile.getName( ) );
+                        saveStmt.setBoolean( 3 , playerProfile.isPremium( ) );
+                        saveStmt.setString( 4 , playerProfile.getLastIp( ) );
+                        
+                        saveStmt.execute( );
+                        try (ResultSet generatedKeys = saveStmt.getGeneratedKeys( )) {
+                            if ( generatedKeys.next( ) ) {
+                                playerProfile.setRowId( generatedKeys.getInt( 1 ) );
                             }
                         }
                     }
                 }
             } finally {
-                playerProfile.getSaveLock().unlock();
+                playerProfile.getSaveLock( ).unlock( );
             }
-        } catch (SQLException ex) {
-            core.getPlugin().getLog().error("Failed to save playerProfile {}", playerProfile, ex);
+        } catch ( SQLException ex ) {
+            core.getPlugin( ).getLog( ).error( "Failed to save playerProfile {}" , playerProfile , ex );
         }
     }
-
+    
     @Override
-    public void close() {
-        dataSource.close();
+    public void close( ){
+        dataSource.close( );
     }
 }

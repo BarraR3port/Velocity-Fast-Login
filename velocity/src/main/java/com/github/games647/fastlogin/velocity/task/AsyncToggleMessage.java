@@ -35,76 +35,76 @@ import com.velocitypowered.api.proxy.Player;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
 public class AsyncToggleMessage implements Runnable {
-
-    private final FastLoginCore<Player, CommandSource, FastLoginVelocity> core;
+    
+    private final FastLoginCore < Player, CommandSource, FastLoginVelocity > core;
     private final CommandSource sender;
     private final String senderName;
     private final String targetPlayer;
     private final boolean toPremium;
     private final boolean isPlayerSender;
-
-    public AsyncToggleMessage(FastLoginCore<Player, CommandSource, FastLoginVelocity> core,
-             CommandSource sender, String playerName, boolean toPremium, boolean playerSender) {
+    
+    public AsyncToggleMessage( FastLoginCore < Player, CommandSource, FastLoginVelocity > core ,
+                               CommandSource sender , String playerName , boolean toPremium , boolean playerSender ){
         this.core = core;
         this.sender = sender;
         this.targetPlayer = playerName;
         this.toPremium = toPremium;
         this.isPlayerSender = playerSender;
-        if (sender instanceof Player)
-            senderName = ((Player) sender).getUsername();
+        if ( sender instanceof Player )
+            senderName = (( Player ) sender).getUsername( );
         else
             senderName = "";
     }
-
+    
     @Override
-    public void run() {
-        if (toPremium) {
-            activatePremium();
+    public void run( ){
+        if ( toPremium ) {
+            activatePremium( );
         } else {
-            turnOffPremium();
+            turnOffPremium( );
         }
     }
-
-    private void turnOffPremium() {
-        StoredProfile playerProfile = core.getStorage().loadProfile(targetPlayer);
+    
+    private void turnOffPremium( ){
+        StoredProfile playerProfile = core.getStorage( ).loadProfile( targetPlayer );
         //existing player is already cracked
-        if (playerProfile.isSaved() && !playerProfile.isPremium()) {
-            sendMessage("not-premium");
+        if ( playerProfile.isSaved( ) && !playerProfile.isPremium( ) ) {
+            sendMessage( "not-premium" );
             return;
         }
-
-        playerProfile.setPremium(false);
-        playerProfile.setId(null);
-        core.getStorage().save(playerProfile);
-        PremiumToggleReason reason = (!isPlayerSender || !senderName.equalsIgnoreCase(playerProfile.getName())) ?
+        
+        playerProfile.setPremium( false );
+        playerProfile.setId( null );
+        core.getStorage( ).save( playerProfile );
+        PremiumToggleReason reason = (!isPlayerSender || !senderName.equalsIgnoreCase( playerProfile.getName( ) )) ?
                 PremiumToggleReason.COMMAND_OTHER : PremiumToggleReason.COMMAND_SELF;
-        core.getPlugin().getProxy().getEventManager().fire(
-                new VelocityFastLoginPremiumToggleEvent(playerProfile, reason));
-        sendMessage("remove-premium");
+        core.getPlugin( ).getProxy( ).getEventManager( ).fire(
+                new VelocityFastLoginPremiumToggleEvent( playerProfile , reason ) );
+        sendMessage( "remove-premium" );
     }
-
-    private void activatePremium() {
-        StoredProfile playerProfile = core.getStorage().loadProfile(targetPlayer);
-        if (playerProfile.isPremium()) {
-            sendMessage("already-exists");
+    
+    private void activatePremium( ){
+        StoredProfile playerProfile = core.getStorage( ).loadProfile( targetPlayer );
+        if ( playerProfile.isPremium( ) ) {
+            sendMessage( "already-exists" );
             return;
         }
-
-        playerProfile.setPremium(true);
-        core.getStorage().save(playerProfile);
-        PremiumToggleReason reason = (!isPlayerSender || !senderName.equalsIgnoreCase(playerProfile.getName())) ?
+        
+        playerProfile.setPremium( true );
+        core.getStorage( ).save( playerProfile );
+        PremiumToggleReason reason = (!isPlayerSender || !senderName.equalsIgnoreCase( playerProfile.getName( ) )) ?
                 PremiumToggleReason.COMMAND_OTHER : PremiumToggleReason.COMMAND_SELF;
-        core.getPlugin().getProxy().getEventManager().fire(
-                new VelocityFastLoginPremiumToggleEvent(playerProfile, reason));
-        sendMessage("add-premium");
+        core.getPlugin( ).getProxy( ).getEventManager( ).fire(
+                new VelocityFastLoginPremiumToggleEvent( playerProfile , reason ) );
+        sendMessage( "add-premium" );
     }
-
-    private void sendMessage(String localeId) {
-        String message = core.getMessage(localeId);
-        if (isPlayerSender) {
-            sender.sendMessage(LegacyComponentSerializer.legacyAmpersand().deserialize(message));
+    
+    private void sendMessage( String localeId ){
+        String message = core.getMessage( localeId );
+        if ( isPlayerSender ) {
+            sender.sendMessage( LegacyComponentSerializer.legacyAmpersand( ).deserialize( message ) );
         } else {
-            core.getPlugin().getProxy().getConsoleCommandSource().sendMessage(LegacyComponentSerializer.legacyAmpersand().deserialize(message));
+            core.getPlugin( ).getProxy( ).getConsoleCommandSource( ).sendMessage( LegacyComponentSerializer.legacyAmpersand( ).deserialize( message ) );
         }
     }
 }

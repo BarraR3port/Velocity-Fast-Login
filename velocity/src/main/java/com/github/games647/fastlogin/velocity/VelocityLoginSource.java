@@ -28,45 +28,44 @@ package com.github.games647.fastlogin.velocity;
 import com.github.games647.fastlogin.core.shared.LoginSource;
 import com.velocitypowered.api.event.connection.PreLoginEvent;
 import com.velocitypowered.api.proxy.InboundConnection;
-
-import java.net.InetSocketAddress;
-
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
-public class VelocityLoginSource implements LoginSource {
+import java.net.InetSocketAddress;
 
+public class VelocityLoginSource implements LoginSource {
+    
     private final InboundConnection connection;
     private final PreLoginEvent preLoginEvent;
-
-    public VelocityLoginSource(InboundConnection connection, PreLoginEvent preLoginEvent) {
+    
+    public VelocityLoginSource( InboundConnection connection , PreLoginEvent preLoginEvent ){
         this.connection = connection;
         this.preLoginEvent = preLoginEvent;
     }
-
+    
     @Override
-    public void enableOnlinemode() {
-        preLoginEvent.setResult(PreLoginEvent.PreLoginComponentResult.forceOnlineMode());
+    public void enableOnlinemode( ){
+        preLoginEvent.setResult( PreLoginEvent.PreLoginComponentResult.forceOnlineMode( ) );
     }
-
+    
     @Override
-    public void kick(String message) {
-        if (message == null) {
-            preLoginEvent.setResult(PreLoginEvent.PreLoginComponentResult.denied(
-                    Component.text("Kicked").color(NamedTextColor.WHITE)));
+    public void kick( String message ){
+        if ( message == null ) {
+            preLoginEvent.setResult( PreLoginEvent.PreLoginComponentResult.denied(
+                    Component.text( "Kicked" ).color( NamedTextColor.WHITE ) ) );
         } else {
-            preLoginEvent.setResult(PreLoginEvent.PreLoginComponentResult.denied(
-                    LegacyComponentSerializer.legacyAmpersand().deserialize(message)));
+            preLoginEvent.setResult( PreLoginEvent.PreLoginComponentResult.denied(
+                    LegacyComponentSerializer.legacyAmpersand( ).deserialize( message ) ) );
         }
     }
-
+    
     @Override
-    public InetSocketAddress getAddress() {
-        return connection.getRemoteAddress();
+    public InetSocketAddress getAddress( ){
+        return connection.getRemoteAddress( );
     }
-
-    public InboundConnection getConnection() {
+    
+    public InboundConnection getConnection( ){
         return connection;
     }
 }

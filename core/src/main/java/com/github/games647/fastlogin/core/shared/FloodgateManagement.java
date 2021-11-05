@@ -29,146 +29,148 @@ import com.github.games647.craftapi.model.Profile;
 import com.github.games647.craftapi.resolver.RateLimitException;
 import com.github.games647.fastlogin.core.StoredProfile;
 import com.github.games647.fastlogin.core.hooks.AuthPlugin;
+import org.geysermc.floodgate.api.player.FloodgatePlayer;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Optional;
 import java.util.UUID;
 
-import org.geysermc.floodgate.api.player.FloodgatePlayer;
-
-public abstract class FloodgateManagement<P extends C, C, L extends LoginSession, T extends PlatformPlugin<C>>
+public abstract class FloodgateManagement< P extends C, C, L extends LoginSession, T extends PlatformPlugin < C > >
         implements Runnable {
-
-    protected final FastLoginCore<P, C, T> core;
+    
+    protected final FastLoginCore < P, C, T > core;
     protected final P player;
-    private final FloodgatePlayer floodgatePlayer;
-    private final String username;
-
     //config.yml values that might be accessed by multiple methods
     protected final String autoLoginFloodgate;
     protected final String autoRegisterFloodgate;
     protected final String allowNameConflict;
-
+    private final FloodgatePlayer floodgatePlayer;
+    private final String username;
     //variables initialized through run() and accesses by subclasss
     protected boolean isRegistered;
     protected StoredProfile profile;
     protected boolean isLinked;
-
-    public FloodgateManagement(FastLoginCore<P, C, T> core, P player, FloodgatePlayer floodgatePlayer) {
+    
+    public FloodgateManagement( FastLoginCore < P, C, T > core , P player , FloodgatePlayer floodgatePlayer ){
         this.core = core;
         this.player = player;
         this.floodgatePlayer = floodgatePlayer;
-        this.username = getName(player);
-
+        this.username = getName( player );
+        
         //load values from config.yml
-        autoLoginFloodgate = core.getConfig().get("autoLoginFloodgate").toString().toLowerCase();
-        autoRegisterFloodgate = core.getConfig().get("autoRegisterFloodgate").toString().toLowerCase();
-        allowNameConflict = core.getConfig().get("allowFloodgateNameConflict").toString().toLowerCase();
+        autoLoginFloodgate = core.getConfig( ).get( "autoLoginFloodgate" ).toString( ).toLowerCase( );
+        autoRegisterFloodgate = core.getConfig( ).get( "autoRegisterFloodgate" ).toString( ).toLowerCase( );
+        allowNameConflict = core.getConfig( ).get( "allowFloodgateNameConflict" ).toString( ).toLowerCase( );
     }
-
+    
     @Override
-    public void run() {
-        core.getPlugin().getLog().info("Player {} is connecting through Geyser Floodgate.", username);
-
+    public void run( ){
+        core.getPlugin( ).getLog( ).info( "Player {} is connecting through Geyser Floodgate." , username );
+        
         // check if the Bedrock player is linked to a Java account 
-        isLinked = floodgatePlayer.getLinkedPlayer() != null;
-
+        isLinked = floodgatePlayer.getLinkedPlayer( ) != null;
+        
         //this happens on Bukkit if it's connected to Bungee
         //if that's the case, players will be logged in via plugin messages
-        if (core.getStorage() == null) {
+        if ( core.getStorage( ) == null ) {
             return;
         }
-
-        profile = core.getStorage().loadProfile(username);
-        AuthPlugin<P> authPlugin = core.getAuthPluginHook();
-
+        
+        profile = core.getStorage( ).loadProfile( username );
+        AuthPlugin < P > authPlugin = core.getAuthPluginHook( );
+        
         try {
             //maybe Bungee without auth plugin
-            if (authPlugin == null) {
-                if (profile != null) {
-                    isRegistered = profile.isPremium();
+            if ( authPlugin == null ) {
+                if ( profile != null ) {
+                    isRegistered = profile.isPremium( );
                 } else {
                     isRegistered = false;
                 }
             } else {
-                isRegistered = authPlugin.isRegistered(username);
+                isRegistered = authPlugin.isRegistered( username );
             }
-        } catch (Exception ex) {
-            core.getPlugin().getLog().error(
-                    "An error has occured while checking if player {} is registered",
-                    username, ex);
+        } catch ( Exception ex ) {
+            core.getPlugin( ).getLog( ).error(
+                    "An error has occured while checking if player {} is registered" ,
+                    username , ex );
             return;
         }
-
+        
         //decide if checks should be made for conflicting Java player names
-        if (isNameCheckRequired()) {
+        if ( isNameCheckRequired( ) ) {
             // check for conflicting Premium Java name
-            Optional<Profile> premiumUUID = Optional.empty();
+            Optional < Profile > premiumUUID = Optional.empty( );
             try {
-                premiumUUID = core.getResolver().findProfile(username);
-            } catch (IOException | RateLimitException e) {
-                core.getPlugin().getLog().error(
-                        "Could not check whether Floodgate Player {}'s name conflicts a premium Java account's name.",
-                        username, e);
+                premiumUUID = core.getResolver( ).findProfile( username );
+            } catch ( IOException | RateLimitException e ) {
+                core.getPlugin( ).getLog( ).error(
+                        "Could not check whether Floodgate Player {}'s name conflicts a premium Java account's name." ,
+                        username , e );
                 return;
             }
-
+            
             //stop execution if player's name is conflicting
-            if (premiumUUID.isPresent()) {
+            if ( premiumUUID.isPresent( ) ) {
                 return;
             }
         }
-
-        if (!isRegistered && !isAutoRegisterAllowed()) {
+        
+        if ( !isRegistered && !isAutoRegisterAllowed( ) ) {
             return;
         }
-
+        
         //logging in from bedrock for a second time threw an error with UUID
-        if (profile == null) {
-            profile = new StoredProfile(getUUID(player), username, true, getAddress(player).toString());
+        if ( profile == null ) {
+            profile = new StoredProfile( getUUID( player ) , username , true , getAddress( player ).toString( ) );
         }
-
+        
         //start Bukkit/Bungee specific tasks
-        startLogin();
-
+        startLogin( );
+        
     }
-
+    
     /**
      * Decude if the player can be auto registered.
      * The config option 'non-conflicting' is ignored by this function.
+     *
      * @return true if the Player can be registered automatically
      */
-    private boolean isAutoRegisterAllowed() {
-        return "true".equals(autoRegisterFloodgate)
-                || "no-conflict".equals(autoRegisterFloodgate) // this was checked before
-                || ("linked".equals(autoRegisterFloodgate) && isLinked);
+    private boolean isAutoRegisterAllowed( ){
+        return "true".equals( autoRegisterFloodgate )
+                || "no-conflict".equals( autoRegisterFloodgate ) // this was checked before
+                || ("linked".equals( autoRegisterFloodgate ) && isLinked);
     }
-
+    
     /**
      * Decides wether checks for conflicting Java names should be made
+     *
      * @return ture if an API call to Mojang is needed
      */
-    private boolean isNameCheckRequired() {
+    private boolean isNameCheckRequired( ){
         //linked players have the same name as their Java profile
         //OR
         //if allowNameConflict is 'false' or 'linked' and the player had a conflicting
         //name, than they would have been kicked in FloodgateHook#checkNameConflict
-        if (isLinked || !"true".equals(allowNameConflict)) {
+        if ( isLinked || !"true".equals( allowNameConflict ) ) {
             return false;
         }
-
+        
         //autoRegisterFloodgate should only be checked if then player is not yet registered
-        if (!isRegistered && "no-conflict".equals(autoRegisterFloodgate)) {
+        if ( !isRegistered && "no-conflict".equals( autoRegisterFloodgate ) ) {
             return true;
         }
-
-        return "no-conflict".equals(autoLoginFloodgate);
+        
+        return "no-conflict".equals( autoLoginFloodgate );
     }
-
-    protected abstract void startLogin();
-    protected abstract String getName(P player);
-    protected abstract UUID getUUID(P player);
-    protected abstract InetSocketAddress getAddress(P player);
-
+    
+    protected abstract void startLogin( );
+    
+    protected abstract String getName( P player );
+    
+    protected abstract UUID getUUID( P player );
+    
+    protected abstract InetSocketAddress getAddress( P player );
+    
 }

@@ -34,11 +34,13 @@ import com.github.games647.fastlogin.velocity.VelocityLoginSession;
 import com.github.games647.fastlogin.velocity.task.AsyncPremiumCheck;
 import com.github.games647.fastlogin.velocity.task.ForceLoginTask;
 import com.velocitypowered.api.event.Continuation;
+import com.velocitypowered.api.event.PostOrder;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.connection.DisconnectEvent;
 import com.velocitypowered.api.event.connection.PreLoginEvent;
 import com.velocitypowered.api.event.player.GameProfileRequestEvent;
 import com.velocitypowered.api.event.player.ServerConnectedEvent;
+import com.velocitypowered.api.event.player.ServerPreConnectEvent;
 import com.velocitypowered.api.proxy.InboundConnection;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
@@ -50,92 +52,128 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 public class ConnectListener {
-
+    
     private final FastLoginVelocity plugin;
     private final RateLimiter rateLimiter;
-
-    public ConnectListener(FastLoginVelocity plugin, RateLimiter rateLimiter) {
+    
+    public ConnectListener( FastLoginVelocity plugin , RateLimiter rateLimiter ){
         this.plugin = plugin;
         this.rateLimiter = rateLimiter;
     }
-
+    
     @Subscribe
-    public void onPreLogin(PreLoginEvent preLoginEvent, Continuation continuation) {
-        if (!preLoginEvent.getResult().isAllowed()) {
+    public void onPreLogin( PreLoginEvent preLoginEvent , Continuation continuation ){
+        if ( !preLoginEvent.getResult( ).isAllowed( ) ) {
             return;
         }
-
-        InboundConnection connection = preLoginEvent.getConnection();
-        if (!rateLimiter.tryAcquire()) {
-            plugin.getLog().warn("Simple Anti-Bot join limit - Ignoring {}", connection);
+        
+        InboundConnection connection = preLoginEvent.getConnection( );
+        if ( !rateLimiter.tryAcquire( ) ) {
+            plugin.getLog( ).warn( "Simple Anti-Bot join limit - Ignoring {}" , connection );
             return;
         }
-
-        String username = preLoginEvent.getUsername();
-        plugin.getLog().info("Incoming login request for {} from {}", username, connection.getRemoteAddress());
-
-        Runnable asyncPremiumCheck = new AsyncPremiumCheck(plugin, connection, username, continuation, preLoginEvent);
-        plugin.getScheduler().runAsync(asyncPremiumCheck);
+        
+        String username = preLoginEvent.getUsername( );
+        plugin.getLog( ).info( "Incoming login request for {} from {}" , username , connection.getRemoteAddress( ) );
+        
+        Runnable asyncPremiumCheck = new AsyncPremiumCheck( plugin , connection , username , continuation , preLoginEvent );
+        plugin.getScheduler( ).runAsync( asyncPremiumCheck );
     }
-
+    
+    // crear una funcion que cuando el jugador se está conectando lo envíe a un servidor específico
+    @Subscribe(order = PostOrder.FIRST)
+    public void serverPreConnectEvent( ServerPreConnectEvent e ){
+        if ( !e.getResult( ).isAllowed( ) )
+            return;
+        
+        plugin.getLog( ).info( "Incoming login request for {} from {}" , e.getPlayer( ).getUsername( ) , e.getOriginalServer( ) );
+        
+        StoredProfile profile = plugin.getCore( ).getStorage( ).loadProfile( e.getPlayer( ).getUsername( ) );
+        if ( profile == null ) {
+            plugin.getLog( ).warn( "No profile found for {}" , e.getPlayer( ).getUsername( ) );
+            return;
+        }
+        VelocityLoginSession session = plugin.getSession( ).get( e.getPlayer( ).getRemoteAddress( ) );
+        if ( session == null ) {
+            return;
+        }
+        if ( profile.isPremium( ) ) {
+            
+            plugin.getLog( ).info( "The player {} is premium" , e.getPlayer( ).getUsername( ) );
+            if ( plugin.getProxy( ).getServer( "lobby1" ).isPresent( ) ) {
+                plugin.getLog( ).info( "Connecting to {}" , plugin.getProxy( ).getServer( "lobby1" ).get( ).getServerInfo( ).getName( ) );
+                
+                //e.setResult( ServerPreConnectEvent.ServerResult.allowed( plugin.getProxy( ).getServer( "lobby1" ).get() ) );
+                /*plugin.getScheduler( ).runAsync( task ).thenAcceptAsync( (Action)->
+                    e.setResult( ServerPreConnectEvent.ServerResult.allowed( plugin.getProxy( ).getServer( "lobby1" ).get() ) ) );
+                */
+                
+                plugin.getLog( ).info( "Connecting to {}" , plugin.getProxy( ).getServer( "lobby1" ).get( ).getServerInfo( ).getName( ) );
+            }
+        }
+        
+        
+    }
+    
+    
     @Subscribe
-    public void onGameprofileRequest(GameProfileRequestEvent event) {
-        if (event.isOnlineMode()) {
-            LoginSession session = plugin.getSession().get(event.getConnection().getRemoteAddress());
-
-            UUID verifiedUUID = event.getGameProfile().getId();
-            String verifiedUsername = event.getUsername();
-            session.setUuid(verifiedUUID);
-            session.setVerifiedUsername(verifiedUsername);
-
-            StoredProfile playerProfile = session.getProfile();
-            playerProfile.setId(verifiedUUID);
-            if (!plugin.getCore().getConfig().get("premiumUuid", true)) {
-                UUID offlineUUID = UUIDAdapter.generateOfflineId(playerProfile.getName());
-                event.setGameProfile(event.getGameProfile().withId(offlineUUID));
-                plugin.getLog().info("Overridden UUID from {} to {} (based of {}) on {}",
-                        verifiedUUID, offlineUUID, verifiedUsername, event.getConnection());
+    public void onGameprofileRequest( GameProfileRequestEvent event ){
+        if ( event.isOnlineMode( ) ) {
+            LoginSession session = plugin.getSession( ).get( event.getConnection( ).getRemoteAddress( ) );
+            
+            UUID verifiedUUID = event.getGameProfile( ).getId( );
+            String verifiedUsername = event.getUsername( );
+            session.setUuid( verifiedUUID );
+            session.setVerifiedUsername( verifiedUsername );
+            
+            StoredProfile playerProfile = session.getProfile( );
+            playerProfile.setId( verifiedUUID );
+            if ( !plugin.getCore( ).getConfig( ).get( "premiumUuid" , true ) ) {
+                UUID offlineUUID = UUIDAdapter.generateOfflineId( playerProfile.getName( ) );
+                event.setGameProfile( event.getGameProfile( ).withId( offlineUUID ) );
+                plugin.getLog( ).info( "Overridden UUID from {} to {} (based of {}) on {}" ,
+                        verifiedUUID , offlineUUID , verifiedUsername , event.getConnection( ) );
             }
-
-            if (!plugin.getCore().getConfig().get("forwardSkin", true)) {
-                event.setGameProfile(event.getGameProfile().withProperties(removeSkin(event.getGameProfile().getProperties())));
+            
+            if ( !plugin.getCore( ).getConfig( ).get( "forwardSkin" , true ) ) {
+                event.setGameProfile( event.getGameProfile( ).withProperties( removeSkin( event.getGameProfile( ).getProperties( ) ) ) );
             }
         }
     }
-
-    private List<GameProfile.Property> removeSkin(List<GameProfile.Property> oldProperties) {
-        List<GameProfile.Property> newProperties = new ArrayList<>(oldProperties.size() - 1);
-        for (GameProfile.Property property : oldProperties) {
-            if (!"textures".equals(property.getName()))
-                newProperties.add(property);
+    
+    private List < GameProfile.Property > removeSkin( List < GameProfile.Property > oldProperties ){
+        List < GameProfile.Property > newProperties = new ArrayList <>( oldProperties.size( ) - 1 );
+        for ( GameProfile.Property property : oldProperties ) {
+            if ( !"textures".equals( property.getName( ) ) )
+                newProperties.add( property );
         }
-
+        
         return newProperties;
     }
-
+    
     @Subscribe
-    public void onServerConnected(ServerConnectedEvent serverConnectedEvent) {
-        Player player = serverConnectedEvent.getPlayer();
-        RegisteredServer server = serverConnectedEvent.getServer();
-
-        VelocityLoginSession session = plugin.getSession().get(player.getRemoteAddress());
-        if (session == null) {
+    public void onServerConnected( ServerConnectedEvent serverConnectedEvent ){
+        Player player = serverConnectedEvent.getPlayer( );
+        RegisteredServer server = serverConnectedEvent.getServer( );
+        
+        VelocityLoginSession session = plugin.getSession( ).get( player.getRemoteAddress( ) );
+        if ( session == null ) {
             return;
         }
-
+        
         // delay sending force command, because Paper will process the login event asynchronously
         // In this case it means that the force command (plugin message) is already received and processed while
         // player is still in the login phase and reported to be offline.
-        Runnable loginTask = new ForceLoginTask(plugin.getCore(), player, server, session);
-        plugin.getProxy().getScheduler()
-                .buildTask(plugin, () -> plugin.getScheduler().runAsync(loginTask))
-                .delay(1L, TimeUnit.SECONDS) // Delay at least one second, otherwise the login command can be missed
-                .schedule();
+        Runnable loginTask = new ForceLoginTask( plugin.getCore( ) , player , server , session );
+        plugin.getProxy( ).getScheduler( )
+                .buildTask( plugin , ( ) -> plugin.getScheduler( ).runAsync( loginTask ) )
+                .delay( 3L , TimeUnit.SECONDS ) // Delay at least one second, otherwise the login command can be missed
+                .schedule( );
     }
-
+    
     @Subscribe
-    public void onDisconnect(DisconnectEvent disconnectEvent) {
-        Player player = disconnectEvent.getPlayer();
-        plugin.getCore().getPendingConfirms().remove(player.getUniqueId());
+    public void onDisconnect( DisconnectEvent disconnectEvent ){
+        Player player = disconnectEvent.getPlayer( );
+        plugin.getCore( ).getPendingConfirms( ).remove( player.getUniqueId( ) );
     }
 }

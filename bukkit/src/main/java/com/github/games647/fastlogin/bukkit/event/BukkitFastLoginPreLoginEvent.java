@@ -32,41 +32,41 @@ import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 
 public class BukkitFastLoginPreLoginEvent extends Event implements FastLoginPreLoginEvent {
-
-    private static final HandlerList handlers = new HandlerList();
+    
+    private static final HandlerList handlers = new HandlerList( );
     private final String username;
     private final LoginSource source;
     private final StoredProfile profile;
-
-    public BukkitFastLoginPreLoginEvent(String username, LoginSource source, StoredProfile profile) {
-        super(true);
-
+    
+    public BukkitFastLoginPreLoginEvent( String username , LoginSource source , StoredProfile profile ){
+        super( true );
+        
         this.username = username;
         this.source = source;
         this.profile = profile;
     }
-
-    @Override
-    public String getUsername() {
-        return username;
-    }
-
-    @Override
-    public LoginSource getSource() {
-        return source;
-    }
-
-    @Override
-    public StoredProfile getProfile() {
-        return profile;
-    }
-
-    @Override
-    public HandlerList getHandlers() {
+    
+    public static HandlerList getHandlerList( ){
         return handlers;
     }
-
-    public static HandlerList getHandlerList() {
+    
+    @Override
+    public String getUsername( ){
+        return username;
+    }
+    
+    @Override
+    public LoginSource getSource( ){
+        return source;
+    }
+    
+    @Override
+    public StoredProfile getProfile( ){
+        return profile;
+    }
+    
+    @Override
+    public HandlerList getHandlers( ){
         return handlers;
     }
 }

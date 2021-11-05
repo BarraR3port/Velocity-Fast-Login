@@ -32,61 +32,60 @@ import com.github.games647.fastlogin.bungee.event.BungeeFastLoginPreLoginEvent;
 import com.github.games647.fastlogin.core.StoredProfile;
 import com.github.games647.fastlogin.core.shared.JoinManagement;
 import com.github.games647.fastlogin.core.shared.event.FastLoginPreLoginEvent;
-
 import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.connection.PendingConnection;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.event.PreLoginEvent;
 
-public class AsyncPremiumCheck extends JoinManagement<ProxiedPlayer, CommandSender, BungeeLoginSource>
+public class AsyncPremiumCheck extends JoinManagement < ProxiedPlayer, CommandSender, BungeeLoginSource >
         implements Runnable {
-
+    
     private final FastLoginBungee plugin;
     private final PreLoginEvent preLoginEvent;
-
+    
     private final String username;
     private final PendingConnection connection;
-
-    public AsyncPremiumCheck(FastLoginBungee plugin, PreLoginEvent preLoginEvent, PendingConnection connection,
-                             String username) {
-        super(plugin.getCore(), plugin.getCore().getAuthPluginHook(), plugin.getFloodgateService());
-
+    
+    public AsyncPremiumCheck( FastLoginBungee plugin , PreLoginEvent preLoginEvent , PendingConnection connection ,
+                              String username ){
+        super( plugin.getCore( ) , plugin.getCore( ).getAuthPluginHook( ) , plugin.getFloodgateService( ) );
+        
         this.plugin = plugin;
         this.preLoginEvent = preLoginEvent;
         this.connection = connection;
         this.username = username;
     }
-
+    
     @Override
-    public void run() {
-        plugin.getSession().remove(connection);
-
+    public void run( ){
+        plugin.getSession( ).remove( connection );
+        
         try {
-            super.onLogin(username, new BungeeLoginSource(connection, preLoginEvent));
+            super.onLogin( username , new BungeeLoginSource( connection , preLoginEvent ) );
         } finally {
-            preLoginEvent.completeIntent(plugin);
+            preLoginEvent.completeIntent( plugin );
         }
     }
-
+    
     @Override
-    public FastLoginPreLoginEvent callFastLoginPreLoginEvent(String username, BungeeLoginSource source,
-                                                             StoredProfile profile) {
-        return plugin.getProxy().getPluginManager()
-                .callEvent(new BungeeFastLoginPreLoginEvent(username, source, profile));
+    public FastLoginPreLoginEvent callFastLoginPreLoginEvent( String username , BungeeLoginSource source ,
+                                                              StoredProfile profile ){
+        return plugin.getProxy( ).getPluginManager( )
+                .callEvent( new BungeeFastLoginPreLoginEvent( username , source , profile ) );
     }
-
+    
     @Override
-    public void requestPremiumLogin(BungeeLoginSource source, StoredProfile profile,
-                                    String username, boolean registered) {
-        source.enableOnlinemode();
-        plugin.getSession().put(source.getConnection(), new BungeeLoginSession(username, registered, profile));
-
-        String ip = source.getAddress().getAddress().getHostAddress();
-        plugin.getCore().getPendingLogin().put(ip + username, new Object());
+    public void requestPremiumLogin( BungeeLoginSource source , StoredProfile profile ,
+                                     String username , boolean registered ){
+        source.enableOnlinemode( );
+        plugin.getSession( ).put( source.getConnection( ) , new BungeeLoginSession( username , registered , profile ) );
+        
+        String ip = source.getAddress( ).getAddress( ).getHostAddress( );
+        plugin.getCore( ).getPendingLogin( ).put( ip + username , new Object( ) );
     }
-
+    
     @Override
-    public void startCrackedSession(BungeeLoginSource source, StoredProfile profile, String username) {
-        plugin.getSession().put(source.getConnection(), new BungeeLoginSession(username, false, profile));
+    public void startCrackedSession( BungeeLoginSource source , StoredProfile profile , String username ){
+        plugin.getSession( ).put( source.getConnection( ) , new BungeeLoginSession( username , false , profile ) );
     }
 }
