@@ -65,7 +65,7 @@ import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.slf4j.Logger;
 
 //TODO: Support for floodgate
-@Plugin(id = PomData.NAME, name = PomData.DISPLAY_NAME, description = PomData.DESCRIPTION, url = PomData.URL,
+@Plugin(id = "fastlogin", name = PomData.DISPLAY_NAME, description = PomData.DESCRIPTION, url = PomData.URL,
         version = PomData.VERSION, authors = {"games647", "https://github.com/games647/FastLogin/graphs/contributors"})
 public class FastLoginVelocity implements PlatformPlugin<CommandSource> {
 
