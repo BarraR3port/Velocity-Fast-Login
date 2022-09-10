@@ -113,12 +113,10 @@ public class ConnectListener implements Listener {
             plugin.getLog().warn("Simple Anti-Bot join limit - Ignoring {}", connection);
             return;
         }
-
-        String username = connection.getName();
-        plugin.getLog().info("Incoming login request for {} from {}", username, connection.getSocketAddress());
+        //plugin.getLog().info("Incoming login request for {} from {}", username, connection.getSocketAddress());
 
         preLoginEvent.registerIntent(plugin);
-        Runnable asyncPremiumCheck = new AsyncPremiumCheck(plugin, preLoginEvent, connection, username);
+        Runnable asyncPremiumCheck = new AsyncPremiumCheck(plugin, preLoginEvent, connection, connection.getName());
         plugin.getScheduler().runAsync(asyncPremiumCheck);
     }
 
